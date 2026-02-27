@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stock Opname Modern</title>
+<title>Stock Opname Sparepart</title>
 
 <!-- LIBRARY -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
@@ -12,353 +12,120 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-:root {
-    --primary: #DC2626;      /* Merah */
-    --primary-dark: #B91C1C; /* Merah Gelap */
-    --bg: #F3F4F6;           /* Abu Terang */
-    --card: #FFFFFF;         /* Putih */
-    --text-dark: #1F2937;    /* Hitam Pekat */
-    --text-gray: #6B7280;    /* Abu Text */
-    --border: #E5E7EB;       /* Abu Border */
-    --success: #16A34A;
-    --danger: #DC2626;
-    --neutral: #9CA3AF;
+:root{
+--primary:#2563eb;--bg:#f1f5f9;--card:#fff;
+--success:#16a34a;--danger:#dc2626;--neutral:#64748b;
+--border:#e5e7eb;--dark:#1e293b;
 }
+body{margin:0;font-family:Segoe UI;background:var(--bg);min-height:100vh}
+header{background:#fff;padding:16px 24px;box-shadow:0 2px 8px rgba(0,0,0,.05);display:flex;justify-content:space-between;align-items:center}
+.container{padding:20px;max-width:1200px;margin:0 auto}
+.card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 10px 25px rgba(0,0,0,.05);margin-bottom:20px}
 
-body {
-    margin: 0;
-    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    background: var(--bg);
-    color: var(--text-dark);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px;align-items:center}
+input,button,select{
+padding:10px 14px;border-radius:8px;border:1px solid var(--border);
+font-size:14px;transition:all .2s
 }
+input[type="file"]{font-size:12px;padding:8px}
+button{cursor:pointer;font-weight:500}
+button.primary{background:var(--primary);color:#fff;border:none}
+button.danger{background:var(--danger);color:#fff;border:none}
+button:hover{opacity:0.9;transform:translateY(-1px)}
+button:active{transform:translateY(0)}
 
-/* HEADER */
-header {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    color: #fff;
-    padding: 18px 20px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-    z-index: 10;
-}
-header h2 { margin: 0; letter-spacing: 0.5px; font-weight: 700; display:flex; align-items:center; gap:10px; font-size: 1.1rem; }
-header span { font-size: 11px; opacity: 0.9; font-weight: 400; background: rgba(0,0,0,0.2); padding: 4px 10px; border-radius: 20px; }
+/* Table Responsif */
+.table-wrapper{overflow-x:auto;border-radius:8px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;min-width:600px}
+th,td{padding:12px 10px;border-bottom:1px solid var(--border);font-size:14px}
+th{background:#f8fafc;font-weight:600;color:var(--dark);position:sticky;top:0}
+tr:hover{background:#f8fafc}
 
-/* MAIN CONTAINER */
-.container { padding: 15px; max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box; flex-grow: 1; display: flex; flex-direction: column; }
-.card {
-    background: var(--card);
-    border-radius: 20px;
-    padding: 15px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.04);
-    border: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1; /* Kartu mengisi ruang */
-}
+.selih{font-weight:600;text-align:center;border-radius:6px;padding:4px;width:100%;display:block}
+.plus{background:#dcfce7;color:var(--success)}
+.minus{background:#fee2e2;color:var(--danger)}
+.zero{background:#f1f5f9;color:var(--neutral)}
 
-/* CONTROLS AREA */
-.controls {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 10px;
-    margin-bottom: 10px;
-}
-.input-group { display: flex; flex-direction: column; gap: 4px; }
-.label { font-size: 10px; font-weight: 600; color: var(--text-gray); text-transform: uppercase; letter-spacing: 0.5px; }
+input[type=number]{width:80px;border:1px solid #ddd;text-align:center}
+input[type=number]:focus{border-color:var(--primary);outline:none;box-shadow:0 0 0 2px rgba(37,99,235,0.2)}
 
-input[type="text"], input[type="date"], input[type="number"], input[type="file"] {
-    padding: 10px 12px;
-    border: 2px solid var(--border);
-    border-radius: 8px;
-    font-size: 13px;
-    transition: all 0.2s;
-    background: #FAFAFA;
-    width: 100%;
-    box-sizing: border-box;
-}
-input:focus {
-    border-color: var(--primary);
-    background: #fff;
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
-}
+#reader{width:100%;max-width:400px;margin-top:10px;border-radius:8px;overflow:hidden}
 
-/* BUTTONS */
-.btn {
-    padding: 10px 16px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
-    transition: all 0.2s;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-}
+/* Toast Notification */
+#toast{position:fixed;bottom:20px;right:20px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;
+opacity:0;transition:opacity 0.3s;z-index:9999}
+#toast.show{opacity:1}
 
-.btn-primary { background: var(--primary); color: #fff; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.2); }
-.btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
-.btn-success { background: var(--success); color: #fff; }
-.btn-success:hover { background: #15803d; }
-.btn-danger { background: transparent; color: var(--danger); border: 2px solid var(--border); }
-.btn-danger:hover { background: #FEF2F2; border-color: var(--danger); }
-.btn-action { background: #F3F4F6; color: var(--text-dark); border: 1px solid var(--border); }
-.btn-action:hover { background: #E5E7EB; }
-.btn-scan { background: var(--text-dark); color: #fff; }
-.btn-scan.active { background: var(--danger); }
-.btn-nav { background: #fff; color: var(--text-dark); border: 2px solid var(--border); padding: 8px 15px; font-size: 12px;}
-.btn-nav:disabled { opacity: 0.5; cursor: not-allowed; }
-
-/* TABLE LAYOUT FIX */
-.table-wrapper {
-    overflow-x: auto; /* Scroll horizontal jika tabel lebar */
-    overflow-y: auto; /* Scroll vertikal untuk data panjang */
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    margin-top: 5px;
-    flex-grow: 1; /* Biar mengisi sisa ruang card */
-    max-height: 1000px; /* Batasi tinggi agar tidak penuh layar, biar bisa scroll di dalam sini */
-}
-
-/* PENTING: Pastikan tabel tidak display grid/flex yang aneh */
-table { 
-    width: 100%; 
-    border-collapse: collapse; 
-    min-width: 600px; /* Lebar minimal agar tidak pecah di mobile */
-    display: table; /* Paksa display table standar */
-}
-
-th { background: #F9FAFB; padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-gray); text-transform: uppercase; border-bottom: 2px solid var(--border); }
-td { padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 13px; background: #fff; white-space: nowrap; }
-tr:nth-child(even) td { background: #F9FAFB; }
-tr:hover td { background: #FEF2F2; }
-
-.part-id { font-weight: 600; color: var(--text-dark); }
-.qty-system { font-family: 'Courier New', monospace; font-weight: 600; }
-input[type="number"] { width: 60px; text-align: center; font-weight: 600; padding: 6px; border-radius: 4px; font-size: 13px; }
-
-/* Badges */
-.badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-block; min-width: 40px; text-align: center; }
-.badge.plus { background: #DCFCE7; color: var(--success); }
-.badge.minus { background: #FEE2E2; color: var(--danger); }
-.badge.zero { background: #F3F4F6; color: var(--neutral); }
-
-/* PAGINATION CONTROLS */
-.pagination-controls {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 15px;
-    margin-top: 15px;
-    padding-top: 10px;
-    border-top: 1px solid var(--border);
-    flex-shrink: 0;
-}
-.page-info { font-weight: 600; color: var(--text-dark); font-size: 13px; }
-.page-total { font-size: 11px; color: var(--text-gray); }
-
-/* SCANNER CONTAINER */
-#reader-container {
-    display: none;
-    position: fixed; /* Ganti ke fixed agar melayang di atas */
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.9);
-    z-index: 999;
-    flex-direction: column;
-}
-
-#reader {
-    width: 100%;
-    height: 100%;
-    border: none;
-    background: #000;
-}
-
-.scanner-line {
-    position: absolute;
-    top: 50%; left: 0; width: 100%; height: 2px;
-    background: rgba(255, 0, 0, 0.8);
-    box-shadow: 0 0 20px 5px rgba(255, 0, 0, 0.6);
-    z-index: 99;
-    pointer-events: none;
-    animation: laserMove 1.5s infinite linear;
-}
-.scanner-line.paused { animation-play-state: paused; opacity: 0; transition: opacity 0.3s; }
-
-@keyframes laserMove {
-    0% { top: 20%; opacity: 0.5; }
-    50% { top: 80%; opacity: 1; }
-    100% { top: 20%; opacity: 0.5; }
-}
-
-/* Overlay Cooldown */
-#cooldown-overlay {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    display: flex; justify-content: center; align-items: center;
-    z-index: 100; display: none;
-}
-#cooldown-text { color: #fff; font-size: 4rem; font-weight: bold; font-family: monospace; }
-
-/* Close Button for Scanner */
-#close-scan-btn {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    z-index: 1000;
-    background: rgba(255,255,255,0.2);
-    color: #fff;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    font-size: 20px;
-    border: 2px solid #fff;
-    cursor: pointer;
-}
-
-/* FOOTER ACTIONS */
-.footer-actions { margin-top: 15px; padding-top: 10px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
-
-/* TOAST */
-#toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--text-dark); color: #fff; padding: 12px 24px; border-radius: 50px; font-weight: 500; box-shadow: 0 10px 20px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.3s, transform 0.3s; z-index: 9999; }
-#toast.show { opacity: 1; transform: translateX(-50%) translateY(-10px); }
-
-.found-highlight { animation: highlightFade 2s; }
-@keyframes highlightFade { 0% { background-color: #FEF2F2; } 100% { background-color: transparent; } }
-
-/* Responsive Mobile */
-@media (max-width: 768px) {
-    .container { padding: 10px; height: auto; }
-    .card { padding: 10px; border-radius: 15px; }
-    .controls { gap: 8px; }
-    .btn { padding: 8px 12px; font-size: 12px; }
-    
-    /* Tabel di mobile pastikan tinggi otomatis */
-    .table-wrapper {
-        max-height: none; /* Hapus batas tinggi di mobile */
-        overflow-y: visible; /* Biar scroll halaman utama */
-    }
-}
+/* Utility */
+.text-right{text-align:right}
+.found-highlight{background:#e0f2fe !important}
 </style>
 </head>
 
 <body>
 
-<!-- Container untuk Scanner (Fixed Overlay) -->
-<div id="reader-container">
-    <div id="close-scan-btn" onclick="toggleScan()">✕</div>
-    <div id="reader"></div>
-    <div id="cooldown-overlay">
-        <div id="cooldown-text">3</div>
-    </div>
-</div>
-
 <header>
-    <h2>📦 Stock Opname</h2>
-    <span>v4.1 View Fix</span>
+<h2>📦 Stock Opname Sparepart</h2>
+<div style="font-size:12px;color:var(--neutral)">v2.0 Enhanced</div>
 </header>
 
 <div class="container">
-    <div class="card">
-        
-        <div class="controls">
-            <div class="input-group">
-                <span class="label">Tanggal</span>
-                <input type="date" id="tanggal">
-            </div>
-            
-            <div class="input-group">
-                <span class="label">Import Excel</span>
-                <input type="file" id="fileInput" accept=".xlsx,.xls" style="background:none; padding:8px;">
-            </div>
-            
-             <div class="input-group" style="justify-content: flex-end;">
-                <span class="label">&nbsp;</span>
-                <button class="btn btn-success" onclick="manualSave()">💾 Simpan</button>
-            </div>
-        </div>
+<div class="card">
 
-        <div class="controls">
-            <div class="input-group" style="grid-column: span 2;">
-                <span class="label">Pencarian</span>
-                <input type="text" id="search" placeholder="Ketik Part Number..." oninput="filterTable()">
-            </div>
-            
-            <div class="input-group" style="justify-content: flex-end;">
-                <span class="label">&nbsp;</span>
-                <div style="display:flex; gap:10px;">
-                    <button id="btnScan" class="btn btn-scan" onclick="toggleScan()">📷 Scan</button>
-                    <button class="btn btn-danger" onclick="clearAll()">🗑 Hapus</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width:50px">NO</th>
-                        <th>PART</th>
-                        <th>Deskripsi Part</th>
-                        <th style="width:70px">QTY</th>
-                        <th style="width:80px">QTY FISIK</th>
-                        <th style="width:70px">SELISIH</th>
-                    </tr>
-                </thead>
-                <tbody id="tbody"></tbody>
-            </table>
-        </div>
-
-        <!-- Pagination Controls -->
-        <div class="pagination-controls" id="pagination-box">
-            <button class="btn btn-nav" id="btnPrev" onclick="prevPage()">« Back</button>
-            <div class="page-info">
-                Hal: <span id="currentPageDisplay">1</span> 
-                <span class="page-total">dari <span id="totalPageDisplay">1</span></span>
-            </div>
-            <button class="btn btn-nav" id="btnNext" onclick="nextPage()">Next »</button>
-        </div>
-
-        <div class="footer-actions">
-            <button class="btn btn-action" onclick="exportExcel()">⬇ Excel</button>
-            <button class="btn btn-primary" onclick="exportPDF()">⬇ PDF</button>
-        </div>
-
-    </div>
+<div class="controls">
+<input type="date" id="tanggal" style="max-width:160px">
+<input type="file" id="fileInput" accept=".xlsx,.xls">
 </div>
 
+<div class="controls">
+<input type="text" id="search" placeholder="Cari Part / Deskripsi..." style="flex-grow:1" oninput="filterTable()">
+<button id="btnScan" onclick="toggleScan()">📷 Scan</button>
+<button id="btnStopScan" class="danger" onclick="stopScan()" style="display:none">✖ Stop Scan</button>
+<button class="danger" onclick="clearAll()">🗑 Hapus Data</button>
+</div>
+
+<!-- Camera Preview -->
+<div id="reader" style="display:none"></div>
+
+<br>
+
+<div class="table-wrapper">
+<table>
+<thead>
+<tr>
+<th style="width:40px">No</th>
+<th>Part Number</th>
+<th>Deskripsi</th>
+<th style="width:80px">Qty System</th>
+<th style="width:100px">Fisik</th>
+<th style="width:100px">Selisih</th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
+</div>
+
+<br>
+<div class="controls" style="justify-content:flex-end">
+<button onclick="exportExcel()">⬇ Download Excel</button>
+<button class="primary" onclick="exportPDF()">⬇ Download PDF</button>
+</div>
+
+</div>
+</div>
+
+<!-- Toast Element -->
 <div id="toast">Notifikasi</div>
-<audio id="successSound" src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2Onp+ej35qYF9lc4GKkJSPiIV9dG1wdn6Gj5SVkIuFfHRvcXaBh46VkI2Jgnx0cXd9hYyTkomHgXx1c3h+g4qRjoqGgHx2dnh/hYmPioeEfnd2eX6EioyJhoN/eHZ4foOIi4mGgn98eHl9goiKiIWBf3x4eX2Bh4qHhIB/fHp6foGGioaDf356e3uAhImHgn9+e3x+gISJhYJ/fXt8foCEiIWCf3x7fH6AhIiFgn98e3x+gISIhYJ/fHt8foCEiIWCf3x7fH6AhIiFgn98e3x+gISIhYJ/fHt8foCEiIWCf3x7fH6AhIiFgn98e3x+gISIhYJ/fHt8foCEiIWCf3x7fH6AhIiFgn98e3x+gISIhYJ/fHt8foCEiIWCf3x7fH6AhIiFgn98e3x+gISIhYJ/fHt8foCEiIWCf3x7fH6AhIiFgn98e3x+gISIhYJ/fHt8foCEiIWCf3x7fH6AhIiFgn98e3x+gISIhYJ/fHt8foCEiIWCf3x7fH6AhIiFgn98e3x+gISIhYJ/fHt8foCEiIWCf3x7fH6AhIiFgn98e3x+gISIhYJ/fHt8foCEiIWCf3x7fH6AhIiFgn98e3x+gISIhYJ/fHt8foCEiIWCf3x7fH6AhIiFgn98e3x+gISIhQ=="></audio>
 
 <script>
 const tbody = document.getElementById("tbody");
-const storageKey = "opnameDataModern";
-const readerContainer = document.getElementById("reader-container");
-const cooldownOverlay = document.getElementById("cooldown-overlay");
-const cooldownText = document.getElementById("cooldown-text");
-
+const storageKey = "opnameData";
 let html5QrCode = null;
 let isScanning = false;
-let isCooldown = false;
-const beepSound = document.getElementById("successSound");
-
-// --- Variabel Pagination ---
-let currentPage = 1;
-const rowsPerPage = 50;
-let allData = []; 
 
 /* ===== INIT ===== */
 window.onload = () => {
-    document.getElementById("tanggal").value = localStorage.getItem("tanggal_mod") || new Date().toISOString().split("T")[0];
+    document.getElementById("tanggal").value = localStorage.getItem("tanggal") || new Date().toISOString().split("T")[0];
     loadStorage();
 }
 
@@ -371,114 +138,66 @@ document.getElementById("fileInput").addEventListener("change", e => {
             const sh = wb.Sheets[wb.SheetNames[0]];
             const rows = XLSX.utils.sheet_to_json(sh, { header: 1 });
             
-            allData = []; 
+            tbody.innerHTML = "";
+            // Skip header (slice 1), map columns [Part, Desc, Qty]
+            // Asumsi format Excel: Kolom A=No, B=Part, C=Desc, D=Qty (sesuaikan jika perlu)
+            let count = 0;
             rows.slice(1).forEach((r, i) => {
+                // Cek jika baris kosong
                 if(!r[1] && !r[2]) return;
-                let part = r[1] || r[0]; 
+                
+                // Deteksi otomatis kolom (sederhana)
+                let part = r[1] || r[0]; // Jika kolom pertama adalah part
                 let desc = r[2] || r[1];
                 let qty = r[3] || r[2] || 0;
+                
+                // Jika header tidak jelas, coba deteksi angka untuk qty
                 if(isNaN(parseInt(qty)) && !isNaN(parseInt(r[1]))) qty = r[1]; 
                 
-                allData.push({
-                    part: String(part),
-                    desc: String(desc),
-                    qty: parseInt(qty) || 0,
-                    fisik: 0
-                });
+                addRow(i + 1, part, desc, parseInt(qty) || 0, 0);
+                count++;
             });
             
-            currentPage = 1;
             saveStorage();
-            renderTable();
-            showToast(`✅ ${allData.length} item dimuat`);
+            showToast(`✅ Berhasil memuat ${count} item`);
         } catch (err) {
-            showToast("❌ Gagal membaca file");
+            showToast("❌ Gagal membaca file Excel");
             console.error(err);
         }
     };
     reader.readAsArrayBuffer(e.target.files[0]);
 });
 
-/* ===== RENDER TABLE ===== */
-function renderTable() {
-    tbody.innerHTML = "";
-    
-    const startIndex = (currentPage - 1) * rowsPerPage;
-    const endIndex = startIndex + rowsPerPage;
-    const paginatedData = allData.slice(startIndex, endIndex);
-
-    paginatedData.forEach((d, i) => {
-        const globalIndex = startIndex + i + 1; 
-        addRow(globalIndex, d.part, d.desc, d.qty, d.fisik);
-    });
-
-    updatePaginationControls();
-}
-
-function updatePaginationControls() {
-    const totalPages = Math.ceil(allData.length / rowsPerPage);
-    document.getElementById("currentPageDisplay").innerText = currentPage;
-    document.getElementById("totalPageDisplay").innerText = totalPages || 1;
-    
-    document.getElementById("btnPrev").disabled = currentPage === 1;
-    document.getElementById("btnNext").disabled = currentPage >= totalPages || totalPages === 0;
-}
-
-function nextPage() {
-    const totalPages = Math.ceil(allData.length / rowsPerPage);
-    if (currentPage < totalPages) {
-        currentPage++;
-        renderTable();
-        scrollToTop();
-    }
-}
-
-function prevPage() {
-    if (currentPage > 1) {
-        currentPage--;
-        renderTable();
-        scrollToTop();
-    }
-}
-
-function scrollToTop() {
-    // Scroll ke atas tabel di mobile
-    document.querySelector('.table-wrapper').scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
 /* ===== ADD ROW ===== */
 function addRow(no, part, desc, qty, fisik) {
     const tr = document.createElement("tr");
-    part = part || "-";
-    desc = desc || "-";
+    // Replace undefined/null with empty string
+    part = part || "";
+    desc = desc || "";
     
     tr.innerHTML = `
-    <td style="text-align:center; font-weight:500; color:var(--text-gray)">${no}</td>
-    <td class="part-id">${part}</td>
-    <td style="color:var(--text-gray)">${desc}</td>
-    <td class="qty-system text-right">${qty}</td>
+    <td>${no}</td>
+    <td class="part-cell">${part}</td>
+    <td>${desc}</td>
+    <td class="qty text-right">${qty}</td>
     <td class="text-right"><input type="number" value="${fisik}" oninput="calc(this)" onclick="this.select()"></td>
-    <td class="text-right"><span class="badge zero">0</span></td>`;
+    <td class="selih-container text-right"><span class="selih zero">0</span></td>`;
     tbody.appendChild(tr);
     calc(tr.querySelector("input"));
 }
 
-/* ===== HITUNG SELISIH & UPDATE DATA ===== */
+/* ===== HITUNG SELISIH ===== */
 function calc(input) {
     const row = input.closest("tr");
-    const globalIndex = parseInt(row.cells[0].innerText) - 1; 
-    
-    const qty = parseInt(row.querySelector(".qty-system").innerText) || 0;
+    const qty = parseInt(row.querySelector(".qty").innerText) || 0;
     const fisik = parseInt(input.value) || 0;
     const selisih = fisik - qty;
     
-    const el = row.querySelector(".badge");
+    const el = row.querySelector(".selih");
     el.innerText = (selisih > 0 ? "+" : "") + selisih;
-    el.className = "badge " + (selisih > 0 ? "plus" : selisih < 0 ? "minus" : "zero");
     
-    if(allData[globalIndex]) {
-        allData[globalIndex].fisik = fisik;
-    }
+    // Reset class
+    el.className = "selih " + (selisih > 0 ? "plus" : selisih < 0 ? "minus" : "zero");
     
     saveStorage();
 }
@@ -486,58 +205,41 @@ function calc(input) {
 /* ===== SEARCH & FILTER ===== */
 function filterTable() {
     const keyword = document.getElementById("search").value.toLowerCase();
-    
-    if (keyword.length === 0) {
-        renderTable();
-        document.getElementById("pagination-box").style.display = "flex";
-        return;
-    }
+    let visibleCount = 0;
+    let lastVisibleRow = null;
 
-    tbody.innerHTML = "";
-    let count = 0;
-    allData.forEach((d, i) => {
-        const part = d.part.toLowerCase();
-        const desc = d.desc.toLowerCase();
+    tbody.querySelectorAll("tr").forEach(r => {
+        const part = r.cells[1].innerText.toLowerCase();
+        const desc = r.cells[2].innerText.toLowerCase();
         const isMatch = part.includes(keyword) || desc.includes(keyword);
         
-        if(isMatch) {
-            addRow(i + 1, d.part, d.desc, d.qty, d.fisik);
-            count++;
+        r.style.display = isMatch ? "" : "none";
+        
+        // Highlight logika
+        r.classList.remove("found-highlight");
+        if(isMatch && keyword.length > 0){
+            visibleCount++;
+            lastVisibleRow = r;
         }
     });
-    
-    document.getElementById("pagination-box").style.display = "none";
-    if(count === 0) tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; color:var(--text-gray)'>Tidak ditemukan</td></tr>";
+
+    // UX: Jika hanya 1 hasil, auto focus ke input fisik
+    if(visibleCount === 1 && lastVisibleRow) {
+        lastVisibleRow.classList.add("found-highlight");
+        lastVisibleRow.querySelector("input").focus();
+    }
 }
 
 /* ===== BARCODE SCANNING ===== */
 function toggleScan(){
-    if(isScanning) {
-        stopScan();
-        return;
-    }
+    if(isScanning) return;
     
-    startScanSequence();
-}
-
-function startScanSequence() {
-    readerContainer.style.display = "flex"; // Tampilkan overlay full screen
+    const readerDiv = document.getElementById("reader");
+    readerDiv.style.display = "block";
     
-    let line = document.getElementById("scan-line-overlay");
-    if(!line) {
-        line = document.createElement("div");
-        line.id = "scan-line-overlay";
-        line.className = "scanner-line";
-        document.getElementById("reader").appendChild(line);
-    }
-
     html5QrCode = new Html5Qrcode("reader");
     
-    const config = { 
-        fps: 60, 
-        qrbox: function(w, h) { return { width: w*0.7, height: h*0.7 }; },
-        aspectRatio: 1.0
-    };
+    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
     
     html5QrCode.start(
         { facingMode: "environment" }, 
@@ -546,183 +248,146 @@ function startScanSequence() {
         onScanFailure
     ).then(() => {
         isScanning = true;
-        isCooldown = false;
-        const btn = document.getElementById("btnScan");
-        btn.innerText = "❌ Stop";
-        btn.classList.add("active");
+        document.getElementById("btnScan").style.display = "none";
+        document.getElementById("btnStopScan").style.display = "inline-block";
     }).catch(err => {
-        showToast("❌ Kamera gagal");
-        readerContainer.style.display = "none";
+        showToast("❌ Tidak bisa mengakses kamera");
+        console.error(err);
+        readerDiv.style.display = "none";
     });
 }
 
 function onScanSuccess(decodedText) {
-    if(isCooldown) return;
-
-    try { beepSound.currentTime = 0; beepSound.play(); } catch(e){}
-
+    // Isi search box & filter
     document.getElementById("search").value = decodedText;
+    filterTable();
     
-    const foundIndex = allData.findIndex(d => d.part.toLowerCase() === decodedText.toLowerCase());
+    // Cek apakah ketemu
+    const visibleRows = [...tbody.querySelectorAll("tr")].filter(r => r.style.display !== "none");
     
-    if(foundIndex !== -1){
-        const d = foundIndex;
-        const targetPage = Math.ceil((d + 1) / rowsPerPage);
+    if(visibleRows.length === 1){
+        // Ketemu 1, stop scan & focus input
+        stopScan();
+        visibleRows[0].classList.add("found-highlight");
+        visibleRows[0].querySelector("input").focus();
+        showToast("✅ Part ditemukan!");
         
-        // Jika halaman berbeda, pindah halaman
-        if(targetPage !== currentPage) {
-            currentPage = targetPage;
-            renderTable();
-        }
-
-        const rows = tbody.querySelectorAll("tr");
-        let targetRow = null;
-        rows.forEach(r => {
-            if(parseInt(r.cells[0].innerText) === (d + 1)) targetRow = r;
-        });
-
-        if(targetRow) {
-            const inputFisik = targetRow.querySelector("input");
-            let currentVal = parseInt(inputFisik.value) || 0;
-            inputFisik.value = currentVal + 1;
-            calc(inputFisik);
-            
-            targetRow.classList.remove("found-highlight");
-            void targetRow.offsetWidth; 
-            targetRow.classList.add("found-highlight");
-            
-            showToast(`✅ ${decodedText} (+1)`);
-            if(navigator.vibrate) navigator.vibrate(100);
-            
-            startCooldown(3);
-        }
+        // Vibrate feedback jika didukung
+        if(navigator.vibrate) navigator.vibrate(200);
     } else {
-        showToast(`❌ Part tidak ditemukan`);
+        showToast(`⚠️ Ditemukan ${visibleRows.length} part. Perjelas pencarian.`);
     }
 }
 
-function startCooldown(seconds) {
-    isCooldown = true;
-    const line = document.getElementById("scan-line-overlay");
-    if(line) line.classList.add("paused");
-    
-    cooldownOverlay.style.display = "flex";
-    let count = seconds;
-    cooldownText.innerText = count;
-    
-    const interval = setInterval(() => {
-        count--;
-        cooldownText.innerText = count;
-        if(count <= 0) {
-            clearInterval(interval);
-            isCooldown = false;
-            cooldownOverlay.style.display = "none";
-            if(line) line.classList.remove("paused");
-        }
-    }, 1000);
+function onScanFailure(error) {
+    // Ignore error biasa (scan frame kosong)
 }
 
 function stopScan() {
     if(html5QrCode && isScanning) {
         html5QrCode.stop().then(() => {
-            readerContainer.style.display = "none";
-            const line = document.getElementById("scan-line-overlay");
-            if(line) line.remove();
-            cooldownOverlay.style.display = "none";
-            isCooldown = false;
-            
-            const btn = document.getElementById("btnScan");
-            btn.innerText = "📷 Scan";
-            btn.classList.remove("active");
+            document.getElementById("reader").style.display = "none";
+            document.getElementById("btnScan").style.display = "inline-block";
+            document.getElementById("btnStopScan").style.display = "none";
             isScanning = false;
         }).catch(err => console.error(err));
     }
 }
 
-function onScanFailure(error) { }
-
 /* ===== STORAGE ===== */
 function saveStorage() {
-    localStorage.setItem(storageKey, JSON.stringify(allData));
-    localStorage.setItem("tanggal_mod", document.getElementById("tanggal").value);
-}
-
-function manualSave() {
-    saveStorage();
-    showToast("💾 Data disimpan!");
+    const data = [];
+    tbody.querySelectorAll("tr").forEach(r => {
+        data.push({
+            part: r.cells[1].innerText,
+            desc: r.cells[2].innerText,
+            qty: r.cells[3].innerText,
+            fisik: r.cells[4].querySelector("input").value
+        });
+    });
+    localStorage.setItem(storageKey, JSON.stringify(data));
+    localStorage.setItem("tanggal", document.getElementById("tanggal").value);
 }
 
 function loadStorage() {
     const data = JSON.parse(localStorage.getItem(storageKey) || "[]");
-    allData = data;
-    currentPage = 1;
-    renderTable();
+    tbody.innerHTML = "";
+    if(data.length > 0) {
+        data.forEach((d, i) => addRow(i + 1, d.part, d.desc, d.qty, d.fisik));
+    }
 }
 
 function clearAll() {
-    if(confirm("Hapus semua data opname?")) {
+    if(confirm("Yakin ingin menghapus semua data opname?")) {
         localStorage.removeItem(storageKey);
-        localStorage.removeItem("tanggal_mod");
+        localStorage.removeItem("tanggal");
         location.reload();
     }
 }
 
 /* ===== EXPORT EXCEL ===== */
 function exportExcel() {
-    if(allData.length === 0) return showToast("Data kosong!");
+    if(tbody.rows.length === 0) return showToast("Data kosong!");
     
-    const d = document.getElementById("tanggal").value;
-    const data = [["LAPORAN STOCK OPNAME"], ["Tanggal", d], [], ["NO", "PART", "Deskripsi Part", "QTY", "QTY FISIK", "SELISIH", "KET"]];
+    const data = [["Tanggal", document.getElementById("tanggal").value]];
+    data.push(["No", "Part Number", "Deskripsi", "Qty System", "Fisik", "Selisih", "Keterangan"]);
     
-    allData.forEach((item, i) => {
-        const s = item.fisik - item.qty;
-        let ket = s === 0 ? "MATCH" : (s > 0 ? "PLUS" : "MINUS");
+    tbody.querySelectorAll("tr").forEach(r => {
+        const s = parseInt(r.querySelector(".selih").innerText);
+        let ket = "OK";
+        if(s > 0) ket = "Lebih";
+        if(s < 0) ket = "Kurang";
+        
         data.push([
-            i + 1, item.part, item.desc,
-            item.qty, item.fisik, s, ket
+            r.cells[0].innerText,
+            r.cells[1].innerText,
+            r.cells[2].innerText,
+            r.cells[3].innerText,
+            r.cells[4].querySelector("input").value,
+            r.querySelector(".selih").innerText,
+            ket
         ]);
     });
 
     const ws = XLSX.utils.aoa_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Opname");
-    XLSX.writeFile(wb, `Opname-${d}.xlsx`);
+    XLSX.writeFile(wb, `Opname-${document.getElementById("tanggal").value}.xlsx`);
 }
 
 /* ===== EXPORT PDF ===== */
 function exportPDF() {
-    if(allData.length === 0) return showToast("Data kosong!");
+    if(tbody.rows.length === 0) return showToast("Data kosong!");
     
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('l', 'mm', 'a4');
-    const d = document.getElementById("tanggal").value;
+    const doc = new jsPDF('l', 'mm', 'a4'); // Landscape
     
-    doc.setFontSize(18);
-    doc.setTextColor(31, 41, 55);
-    doc.text("Laporan Stock Opname", 14, 18);
-    
-    doc.setFontSize(11);
-    doc.setTextColor(100);
-    doc.text("Tanggal : " + d, 14, 26);
+    doc.setFontSize(16);
+    doc.text("Stock Opname Sparepart", 14, 15);
+    doc.setFontSize(10);
+    doc.text("Tanggal : " + document.getElementById("tanggal").value, 14, 22);
     
     const rows = [];
-    allData.forEach((item, i) => {
+    tbody.querySelectorAll("tr").forEach(r => {
         rows.push([
-            i + 1, item.part, item.desc.substring(0, 35),
-            item.qty, item.fisik, item.fisik - item.qty
+            r.cells[0].innerText,
+            r.cells[1].innerText,
+            r.cells[2].innerText.substring(0, 30), // Batasi deskripsi
+            r.cells[3].innerText,
+            r.cells[4].querySelector("input").value,
+            r.querySelector(".selih").innerText
         ]);
     });
 
     doc.autoTable({
-        startY: 32,
-        head: [["NO", "PART", "Deskripsi Part", "QTY", "QTY FISIK", "SELISIH"]],
+        startY: 26,
+        head: [["No", "Part", "Deskripsi", "Qty", "Fisik", "Selisih"]],
         body: rows,
-        styles: { fontSize: 9, cellPadding: 3 },
-        headStyles: { fillColor: [220, 38, 38], textColor: '#fff', fontStyle: 'bold' },
-        alternateRowStyles: { fillColor: [249, 250, 251] }
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [37, 99, 235] }
     });
     
-    doc.save(`Opname-${d}.pdf`);
+    doc.save(`Opname-${document.getElementById("tanggal").value}.pdf`);
 }
 
 /* ===== TOAST ===== */
