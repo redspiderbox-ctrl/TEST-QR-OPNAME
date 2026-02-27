@@ -49,16 +49,58 @@ tr:hover{background:#f8fafc}
 input[type=number]{width:80px;border:1px solid #ddd;text-align:center}
 input[type=number]:focus{border-color:var(--primary);outline:none;box-shadow:0 0 0 2px rgba(37,99,235,0.2)}
 
-#reader{width:100%;max-width:400px;margin-top:10px;border-radius:8px;overflow:hidden}
+/* Floating QR Scanner Style */
+#qr-floating-container {
+position: fixed;
+bottom: 20px;
+right: 20px;
+width: 320px;
+background: #fff;
+border-radius: 12px;
+box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+z-index: 9999;
+overflow: hidden;
+border: 2px solid var(--primary);
+display: none;
+animation: slideUp 0.3s ease-out;
+}
+.qr-header {
+background: var(--primary);
+color: white;
+padding: 8px 15px;
+font-size: 14px;
+font-weight: bold;
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+.qr-header .close-btn {
+background: rgba(255,255,255,0.2);
+border: none;
+color: white;
+width: 24px;
+height: 24px;
+border-radius: 50%;
+cursor: pointer;
+font-size: 16px;
+line-height: 24px;
+text-align: center;
+}
+.qr-body { padding: 10px; }
+#reader {
+width: 100%;
+border-radius: 8px;
+}
 
 /* Toast Notification */
-#toast{position:fixed;bottom:20px;right:20px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;
-opacity:0;transition:opacity 0.3s;z-index:9999}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:12px 20px;border-radius:8px;
+opacity:0;transition:opacity 0.3s;z-index:99999}
 #toast.show{opacity:1}
 
 /* Utility */
 .text-right{text-align:right}
 .found-highlight{background:#e0f2fe !important}
+@keyframes slideUp { from {transform: translateY(100%); opacity:0;} to {transform: translateY(0); opacity:1;} }
 </style>
 </head>
 
@@ -66,7 +108,7 @@ opacity:0;transition:opacity 0.3s;z-index:9999}
 
 <header>
 <h2>📦 Stock Opname Sparepart</h2>
-<div style="font-size:12px;color:var(--neutral)">v2.0 Enhanced</div>
+<div style="font-size:12px;color:var(--neutral)">v3.0 High Speed Scanner</div>
 </header>
 
 <div class="container">
@@ -79,13 +121,20 @@ opacity:0;transition:opacity 0.3s;z-index:9999}
 
 <div class="controls">
 <input type="text" id="search" placeholder="Cari Part / Deskripsi..." style="flex-grow:1" oninput="filterTable()">
-<button id="btnScan" onclick="toggleScan()">📷 Scan</button>
-<button id="btnStopScan" class="danger" onclick="stopScan()" style="display:none">✖ Stop Scan</button>
+<button class="primary" onclick="startScan()">📷 Scan</button>
 <button class="danger" onclick="clearAll()">🗑 Hapus Data</button>
 </div>
 
-<!-- Camera Preview -->
-<div id="reader" style="display:none"></div>
+<!-- Floating Camera Container -->
+<div id="qr-floating-container">
+    <div class="qr-header">
+        <span>📷 Mode Scan Aktif</span>
+        <button class="close-btn" onclick="stopScan()">×</button>
+    </div>
+    <div class="qr-body">
+        <div id="reader"></div>
+    </div>
+</div>
 
 <br>
 
@@ -117,6 +166,9 @@ opacity:0;transition:opacity 0.3s;z-index:9999}
 <!-- Toast Element -->
 <div id="toast">Notifikasi</div>
 
+<!-- Audio for Beep -->
+<audio id="beepSound" src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2LkY2Ce3Z0eIKLkoyDfXdzfIWLkIuEfnt2eYOKkYqDfXl0d4GIjoqEfnd0dYCIjYmDfHR0dH+IjIiCfHNzdYCHiYiBfHFxdICEh8eAfG9wcYCDhcaAfG5vcICChcV/fG1ucH+BhMN9fGxrbn6AgsJ8fGtrbn2AgMCAf2tqbmB9f39+f2pqbWB9fn5+fmlpbF98fn5+fWhpbl57fn5+fWdoa156fn19fGdnaF15fn19fGZlZl10fnx8fGVlZFxzfXt7e2RkY1xzfHt7e2NjYltxe3p6emJhYVpwenl5eWFgYFpveXh4eF9fX1lueHh4eF5eXVhteHd3d15dXFlkd3d3dVxcXFFjc3Nzc1tbWlBhb29vbVpaSU5dXV1dWlpKUF1dXVtaSk9cXFxbWUpPXV1cW1hJT1xcW1hGTVxcW1hGRU5cXFtXRkROXFtaV0ZET1pZWlZERU5aWVhVQ0ROV1dXVUNESldWVlNCREpWVVRTQUQyVlVUU0JBTFVVVFNCRkxVVVNSQ0ZMVVVSS0NF" preload="auto"></audio>
+
 <script>
 const tbody = document.getElementById("tbody");
 const storageKey = "opnameData";
@@ -139,19 +191,12 @@ document.getElementById("fileInput").addEventListener("change", e => {
             const rows = XLSX.utils.sheet_to_json(sh, { header: 1 });
             
             tbody.innerHTML = "";
-            // Skip header (slice 1), map columns [Part, Desc, Qty]
-            // Asumsi format Excel: Kolom A=No, B=Part, C=Desc, D=Qty (sesuaikan jika perlu)
             let count = 0;
             rows.slice(1).forEach((r, i) => {
-                // Cek jika baris kosong
                 if(!r[1] && !r[2]) return;
-                
-                // Deteksi otomatis kolom (sederhana)
-                let part = r[1] || r[0]; // Jika kolom pertama adalah part
+                let part = r[1] || r[0]; 
                 let desc = r[2] || r[1];
                 let qty = r[3] || r[2] || 0;
-                
-                // Jika header tidak jelas, coba deteksi angka untuk qty
                 if(isNaN(parseInt(qty)) && !isNaN(parseInt(r[1]))) qty = r[1]; 
                 
                 addRow(i + 1, part, desc, parseInt(qty) || 0, 0);
@@ -171,7 +216,6 @@ document.getElementById("fileInput").addEventListener("change", e => {
 /* ===== ADD ROW ===== */
 function addRow(no, part, desc, qty, fisik) {
     const tr = document.createElement("tr");
-    // Replace undefined/null with empty string
     part = part || "";
     desc = desc || "";
     
@@ -195,10 +239,7 @@ function calc(input) {
     
     const el = row.querySelector(".selih");
     el.innerText = (selisih > 0 ? "+" : "") + selisih;
-    
-    // Reset class
     el.className = "selih " + (selisih > 0 ? "plus" : selisih < 0 ? "minus" : "zero");
-    
     saveStorage();
 }
 
@@ -214,33 +255,46 @@ function filterTable() {
         const isMatch = part.includes(keyword) || desc.includes(keyword);
         
         r.style.display = isMatch ? "" : "none";
-        
-        // Highlight logika
         r.classList.remove("found-highlight");
+        
         if(isMatch && keyword.length > 0){
             visibleCount++;
             lastVisibleRow = r;
         }
     });
 
-    // UX: Jika hanya 1 hasil, auto focus ke input fisik
     if(visibleCount === 1 && lastVisibleRow) {
         lastVisibleRow.classList.add("found-highlight");
         lastVisibleRow.querySelector("input").focus();
     }
 }
 
-/* ===== BARCODE SCANNING ===== */
-function toggleScan(){
+/* ===== BARCODE SCANNING (HIGH SENSITIVITY) ===== */
+function startScan() {
     if(isScanning) return;
     
-    const readerDiv = document.getElementById("reader");
-    readerDiv.style.display = "block";
+    const container = document.getElementById("qr-floating-container");
+    container.style.display = "block";
     
     html5QrCode = new Html5Qrcode("reader");
     
-    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-    
+    // Konfigurasi Sensitivitas Tinggi
+    const config = {
+        fps: 20, // Frame per second tinggi
+        qrbox: { width: 250, height: 150 }, // Box lebih lebar untuk barcode
+        aspectRatio: 1.777778,
+        // Aktifkan mode percepatan jika didukung
+        useBarCodeDetectorIfSupported: true, 
+        // Fokus ke mode scan cepat
+        formatsToSupport: [
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.CODE_39,
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.QR_CODE
+        ]
+    };
+
     html5QrCode.start(
         { facingMode: "environment" }, 
         config,
@@ -248,49 +302,66 @@ function toggleScan(){
         onScanFailure
     ).then(() => {
         isScanning = true;
-        document.getElementById("btnScan").style.display = "none";
-        document.getElementById("btnStopScan").style.display = "inline-block";
+        // Terapkan konfigurasi tambahan jika perlu via applyVideoConstraints
+        html5QrCode.applyVideoConstraints({ 
+            focusMode: "continuous", // Autofocus terus menerus
+            advanced: [{zoom: 1.0}] 
+        }).catch(e => console.log("Constraint not supported"));
+        
     }).catch(err => {
-        showToast("❌ Tidak bisa mengakses kamera");
+        showToast("❌ Kamera tidak bisa diakses");
         console.error(err);
-        readerDiv.style.display = "none";
+        stopScan();
     });
 }
 
 function onScanSuccess(decodedText) {
-    // Isi search box & filter
+    // 1. Mainkan Suara Beep
+    playBeep();
+
+    // 2. Hentikan Scanner sementara untuk mencegah scan ganda
+    // Kita stop total agar user bisa input fisik
+    stopScan();
+
+    // 3. Proses Data
     document.getElementById("search").value = decodedText;
-    filterTable();
+    filterTable(); // Trigger filter manual
     
-    // Cek apakah ketemu
     const visibleRows = [...tbody.querySelectorAll("tr")].filter(r => r.style.display !== "none");
     
     if(visibleRows.length === 1){
-        // Ketemu 1, stop scan & focus input
-        stopScan();
         visibleRows[0].classList.add("found-highlight");
         visibleRows[0].querySelector("input").focus();
-        showToast("✅ Part ditemukan!");
+        visibleRows[0].querySelector("input").select();
+        showToast("✅ Part ditemukan: " + decodedText);
         
-        // Vibrate feedback jika didukung
-        if(navigator.vibrate) navigator.vibrate(200);
+        if(navigator.vibrate) navigator.vibrate(100);
+    } else if(visibleRows.length > 1) {
+        showToast(`⚠️ Ditemukan ${visibleRows.length} duplikat. Perjelas input.`);
+        // Jika duplikat, biarkan kamera tertutup agar user bisa memilih manual
     } else {
-        showToast(`⚠️ Ditemukan ${visibleRows.length} part. Perjelas pencarian.`);
+        showToast("❌ Part tidak ditemukan di data.");
     }
 }
 
 function onScanFailure(error) {
-    // Ignore error biasa (scan frame kosong)
+    // Abaikan error scanning (garis kosong, blur, dll)
 }
 
 function stopScan() {
     if(html5QrCode && isScanning) {
         html5QrCode.stop().then(() => {
-            document.getElementById("reader").style.display = "none";
-            document.getElementById("btnScan").style.display = "inline-block";
-            document.getElementById("btnStopScan").style.display = "none";
             isScanning = false;
         }).catch(err => console.error(err));
+    }
+    document.getElementById("qr-floating-container").style.display = "none";
+}
+
+function playBeep() {
+    const sound = document.getElementById("beepSound");
+    if(sound) {
+        sound.currentTime = 0; // Rewind
+        sound.play().catch(e => console.log("Audio play blocked", e));
     }
 }
 
@@ -360,7 +431,7 @@ function exportPDF() {
     if(tbody.rows.length === 0) return showToast("Data kosong!");
     
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('l', 'mm', 'a4'); // Landscape
+    const doc = new jsPDF('l', 'mm', 'a4'); 
     
     doc.setFontSize(16);
     doc.text("Stock Opname Sparepart", 14, 15);
@@ -372,7 +443,7 @@ function exportPDF() {
         rows.push([
             r.cells[0].innerText,
             r.cells[1].innerText,
-            r.cells[2].innerText.substring(0, 30), // Batasi deskripsi
+            r.cells[2].innerText.substring(0, 30), 
             r.cells[3].innerText,
             r.cells[4].querySelector("input").value,
             r.querySelector(".selih").innerText
