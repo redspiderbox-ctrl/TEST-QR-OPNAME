@@ -31,14 +31,15 @@ body {
     background: var(--bg);
     color: var(--text-dark);
     min-height: 100vh;
-    /* Penting: Hapus display:flex agar konten mengalir ke bawah sempurna */
+    display: flex;
+    flex-direction: column;
 }
 
 /* HEADER */
 header {
     background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     color: #fff;
-    padding: 24px 32px;
+    padding: 18px 20px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     display: flex;
     justify-content: space-between;
@@ -46,47 +47,37 @@ header {
     flex-shrink: 0;
     z-index: 10;
 }
-header h2 { margin: 0; letter-spacing: 0.5px; font-weight: 700; display:flex; align-items:center; gap:10px; font-size: 1.2rem; }
-header span { font-size: 12px; opacity: 0.9; font-weight: 400; background: rgba(0,0,0,0.2); padding: 4px 12px; border-radius: 20px; }
+header h2 { margin: 0; letter-spacing: 0.5px; font-weight: 700; display:flex; align-items:center; gap:10px; font-size: 1.1rem; }
+header span { font-size: 11px; opacity: 0.9; font-weight: 400; background: rgba(0,0,0,0.2); padding: 4px 10px; border-radius: 20px; }
 
 /* MAIN CONTAINER */
-.container { padding: 30px; max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+.container { padding: 15px; max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box; flex-grow: 1; display: flex; flex-direction: column; }
 .card {
     background: var(--card);
     border-radius: 20px;
-    padding: 30px;
+    padding: 15px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.04);
     border: 1px solid var(--border);
     display: flex;
     flex-direction: column;
-    margin-bottom: 20px; /* Spasi bawah */
-}
-
-/* SCANNER CONTAINER - Posisi Normal di dalam Card */
-#reader-container {
-    display: none;
-    margin-bottom: 20px;
-    position: relative;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    flex-grow: 1; /* Kartu mengisi ruang */
 }
 
 /* CONTROLS AREA */
 .controls {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 15px;
-    margin-bottom: 20px;
+    gap: 10px;
+    margin-bottom: 10px;
 }
-.input-group { display: flex; flex-direction: column; gap: 6px; }
-.label { font-size: 11px; font-weight: 600; color: var(--text-gray); text-transform: uppercase; letter-spacing: 0.5px; }
+.input-group { display: flex; flex-direction: column; gap: 4px; }
+.label { font-size: 10px; font-weight: 600; color: var(--text-gray); text-transform: uppercase; letter-spacing: 0.5px; }
 
 input[type="text"], input[type="date"], input[type="number"], input[type="file"] {
-    padding: 12px 16px;
+    padding: 10px 12px;
     border: 2px solid var(--border);
-    border-radius: 10px;
-    font-size: 14px;
+    border-radius: 8px;
+    font-size: 13px;
     transition: all 0.2s;
     background: #FAFAFA;
     width: 100%;
@@ -101,9 +92,9 @@ input:focus {
 
 /* BUTTONS */
 .btn {
-    padding: 12px 20px;
-    border-radius: 10px;
-    font-size: 14px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     border: none;
@@ -111,7 +102,7 @@ input:focus {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.2); }
@@ -127,20 +118,36 @@ input:focus {
 .btn-nav { background: #fff; color: var(--text-dark); border: 2px solid var(--border); padding: 8px 15px; font-size: 12px;}
 .btn-nav:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* TABLE */
-.table-wrapper { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; margin-top: 5px; }
-table { width: 100%; border-collapse: collapse; min-width: 800px; }
-th { background: #F9FAFB; padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 700; color: var(--text-gray); text-transform: uppercase; border-bottom: 2px solid var(--border); }
-td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 14px; background: #fff; }
+/* TABLE LAYOUT FIX */
+.table-wrapper {
+    overflow-x: auto; /* Scroll horizontal jika tabel lebar */
+    overflow-y: auto; /* Scroll vertikal untuk data panjang */
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-top: 5px;
+    flex-grow: 1; /* Biar mengisi sisa ruang card */
+    max-height: 1000px; /* Batasi tinggi agar tidak penuh layar, biar bisa scroll di dalam sini */
+}
+
+/* PENTING: Pastikan tabel tidak display grid/flex yang aneh */
+table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    min-width: 600px; /* Lebar minimal agar tidak pecah di mobile */
+    display: table; /* Paksa display table standar */
+}
+
+th { background: #F9FAFB; padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-gray); text-transform: uppercase; border-bottom: 2px solid var(--border); }
+td { padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 13px; background: #fff; white-space: nowrap; }
 tr:nth-child(even) td { background: #F9FAFB; }
 tr:hover td { background: #FEF2F2; }
 
 .part-id { font-weight: 600; color: var(--text-dark); }
 .qty-system { font-family: 'Courier New', monospace; font-weight: 600; }
-input[type="number"] { width: 80px; text-align: center; font-weight: 600; padding: 8px; border-radius: 6px; }
+input[type="number"] { width: 60px; text-align: center; font-weight: 600; padding: 6px; border-radius: 4px; font-size: 13px; }
 
 /* Badges */
-.badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; display: inline-block; min-width: 40px; text-align: center; }
+.badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-block; min-width: 40px; text-align: center; }
 .badge.plus { background: #DCFCE7; color: var(--success); }
 .badge.minus { background: #FEE2E2; color: var(--danger); }
 .badge.zero { background: #F3F4F6; color: var(--neutral); }
@@ -151,20 +158,29 @@ input[type="number"] { width: 80px; text-align: center; font-weight: 600; paddin
     justify-content: center;
     align-items: center;
     gap: 15px;
-    margin-top: 20px;
-    padding-top: 15px;
+    margin-top: 15px;
+    padding-top: 10px;
     border-top: 1px solid var(--border);
+    flex-shrink: 0;
 }
-.page-info { font-weight: 600; color: var(--text-dark); font-size: 14px; }
-.page-total { font-size: 12px; color: var(--text-gray); }
+.page-info { font-weight: 600; color: var(--text-dark); font-size: 13px; }
+.page-total { font-size: 11px; color: var(--text-gray); }
 
-/* SCANNER STYLING */
+/* SCANNER CONTAINER */
+#reader-container {
+    display: none;
+    position: fixed; /* Ganti ke fixed agar melayang di atas */
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9);
+    z-index: 999;
+    flex-direction: column;
+}
+
 #reader {
     width: 100%;
+    height: 100%;
     border: none;
-    overflow: hidden;
     background: #000;
-    position: relative;
 }
 
 .scanner-line {
@@ -187,14 +203,30 @@ input[type="number"] { width: 80px; text-align: center; font-weight: 600; paddin
 /* Overlay Cooldown */
 #cooldown-overlay {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.8);
     display: flex; justify-content: center; align-items: center;
     z-index: 100; display: none;
 }
-#cooldown-text { color: #fff; font-size: 2rem; font-weight: bold; font-family: monospace; }
+#cooldown-text { color: #fff; font-size: 4rem; font-weight: bold; font-family: monospace; }
+
+/* Close Button for Scanner */
+#close-scan-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    border: 2px solid #fff;
+    cursor: pointer;
+}
 
 /* FOOTER ACTIONS */
-.footer-actions { margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
+.footer-actions { margin-top: 15px; padding-top: 10px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
 
 /* TOAST */
 #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--text-dark); color: #fff; padding: 12px 24px; border-radius: 50px; font-weight: 500; box-shadow: 0 10px 20px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.3s, transform 0.3s; z-index: 9999; }
@@ -203,47 +235,41 @@ input[type="number"] { width: 80px; text-align: center; font-weight: 600; paddin
 .found-highlight { animation: highlightFade 2s; }
 @keyframes highlightFade { 0% { background-color: #FEF2F2; } 100% { background-color: transparent; } }
 
-/* RESPONSIVE MOBILE - Optimasi Tanpa Mengubah Struktur */
+/* Responsive Mobile */
 @media (max-width: 768px) {
-    header { padding: 16px 20px; }
-    header h2 { font-size: 1rem; }
-    .container { padding: 15px; }
-    .card { padding: 15px; border-radius: 15px; }
+    .container { padding: 10px; height: auto; }
+    .card { padding: 10px; border-radius: 15px; }
+    .controls { gap: 8px; }
+    .btn { padding: 8px 12px; font-size: 12px; }
     
-    /* Biarkan tombol dan control menyesuaikan lebar layar */
-    .controls { gap: 10px; }
-    .btn { padding: 10px 16px; font-size: 13px; }
-    
-    /* Tabel bisa di-scroll horizontal */
-    .table-wrapper { border-radius: 8px; }
-    
-    /* Scanner rapi */
-    #reader-container { margin-bottom: 15px; border-radius: 8px; }
-    
-    /* Pagination rapi */
-    .pagination-controls { gap: 10px; }
+    /* Tabel di mobile pastikan tinggi otomatis */
+    .table-wrapper {
+        max-height: none; /* Hapus batas tinggi di mobile */
+        overflow-y: visible; /* Biar scroll halaman utama */
+    }
 }
 </style>
 </head>
 
 <body>
 
+<!-- Container untuk Scanner (Fixed Overlay) -->
+<div id="reader-container">
+    <div id="close-scan-btn" onclick="toggleScan()">✕</div>
+    <div id="reader"></div>
+    <div id="cooldown-overlay">
+        <div id="cooldown-text">3</div>
+    </div>
+</div>
+
 <header>
     <h2>📦 Stock Opname</h2>
-    <span>v4.1 Fixed View</span>
+    <span>v4.1 View Fix</span>
 </header>
 
 <div class="container">
     <div class="card">
         
-        <!-- Scanner Container (Di dalam Card) -->
-        <div id="reader-container">
-            <div id="reader"></div>
-            <div id="cooldown-overlay">
-                <div id="cooldown-text">3</div>
-            </div>
-        </div>
-
         <div class="controls">
             <div class="input-group">
                 <span class="label">Tanggal</span>
@@ -252,7 +278,7 @@ input[type="number"] { width: 80px; text-align: center; font-weight: 600; paddin
             
             <div class="input-group">
                 <span class="label">Import Excel</span>
-                <input type="file" id="fileInput" accept=".xlsx,.xls" style="background:none; padding:9px;">
+                <input type="file" id="fileInput" accept=".xlsx,.xls" style="background:none; padding:8px;">
             </div>
             
              <div class="input-group" style="justify-content: flex-end;">
@@ -283,9 +309,9 @@ input[type="number"] { width: 80px; text-align: center; font-weight: 600; paddin
                         <th style="width:50px">NO</th>
                         <th>PART</th>
                         <th>Deskripsi Part</th>
-                        <th style="width:80px">QTY</th>
-                        <th style="width:100px">QTY FISIK</th>
-                        <th style="width:80px">SELISIH</th>
+                        <th style="width:70px">QTY</th>
+                        <th style="width:80px">QTY FISIK</th>
+                        <th style="width:70px">SELISIH</th>
                     </tr>
                 </thead>
                 <tbody id="tbody"></tbody>
@@ -328,7 +354,7 @@ const beepSound = document.getElementById("successSound");
 // --- Variabel Pagination ---
 let currentPage = 1;
 const rowsPerPage = 50;
-let allData = []; // Menyimpan seluruh data dari storage/excel
+let allData = []; 
 
 /* ===== INIT ===== */
 window.onload = () => {
@@ -345,7 +371,7 @@ document.getElementById("fileInput").addEventListener("change", e => {
             const sh = wb.Sheets[wb.SheetNames[0]];
             const rows = XLSX.utils.sheet_to_json(sh, { header: 1 });
             
-            allData = []; // Reset data global
+            allData = []; 
             rows.slice(1).forEach((r, i) => {
                 if(!r[1] && !r[2]) return;
                 let part = r[1] || r[0]; 
@@ -354,8 +380,8 @@ document.getElementById("fileInput").addEventListener("change", e => {
                 if(isNaN(parseInt(qty)) && !isNaN(parseInt(r[1]))) qty = r[1]; 
                 
                 allData.push({
-                    part: part,
-                    desc: desc,
+                    part: String(part),
+                    desc: String(desc),
                     qty: parseInt(qty) || 0,
                     fisik: 0
                 });
@@ -373,18 +399,16 @@ document.getElementById("fileInput").addEventListener("change", e => {
     reader.readAsArrayBuffer(e.target.files[0]);
 });
 
-/* ===== RENDER TABLE (LOGIC PAGINATION) ===== */
+/* ===== RENDER TABLE ===== */
 function renderTable() {
     tbody.innerHTML = "";
     
-    // Hitung range data untuk halaman ini
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
     const paginatedData = allData.slice(startIndex, endIndex);
 
-    // Tampilkan data
     paginatedData.forEach((d, i) => {
-        const globalIndex = startIndex + i + 1; // Nomor urut global
+        const globalIndex = startIndex + i + 1; 
         addRow(globalIndex, d.part, d.desc, d.qty, d.fisik);
     });
 
@@ -403,18 +427,23 @@ function updatePaginationControls() {
 function nextPage() {
     const totalPages = Math.ceil(allData.length / rowsPerPage);
     if (currentPage < totalPages) {
-        if(isScanning) pauseScanTemporarily(); // Jeda scanner saat ganti halaman
         currentPage++;
         renderTable();
+        scrollToTop();
     }
 }
 
 function prevPage() {
     if (currentPage > 1) {
-        if(isScanning) pauseScanTemporarily(); // Jeda scanner saat ganti halaman
         currentPage--;
         renderTable();
+        scrollToTop();
     }
+}
+
+function scrollToTop() {
+    // Scroll ke atas tabel di mobile
+    document.querySelector('.table-wrapper').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 /* ===== ADD ROW ===== */
@@ -437,18 +466,16 @@ function addRow(no, part, desc, qty, fisik) {
 /* ===== HITUNG SELISIH & UPDATE DATA ===== */
 function calc(input) {
     const row = input.closest("tr");
-    const globalIndex = parseInt(row.cells[0].innerText) - 1; // Index array (0-based)
+    const globalIndex = parseInt(row.cells[0].innerText) - 1; 
     
     const qty = parseInt(row.querySelector(".qty-system").innerText) || 0;
     const fisik = parseInt(input.value) || 0;
     const selisih = fisik - qty;
     
-    // Update Tampilan
     const el = row.querySelector(".badge");
     el.innerText = (selisih > 0 ? "+" : "") + selisih;
     el.className = "badge " + (selisih > 0 ? "plus" : selisih < 0 ? "minus" : "zero");
     
-    // Update Array Global
     if(allData[globalIndex]) {
         allData[globalIndex].fisik = fisik;
     }
@@ -460,14 +487,12 @@ function calc(input) {
 function filterTable() {
     const keyword = document.getElementById("search").value.toLowerCase();
     
-    // Jika pencarian kosong, kembalikan ke mode pagination normal
     if (keyword.length === 0) {
-        document.getElementById("pagination-box").style.display = "flex";
         renderTable();
+        document.getElementById("pagination-box").style.display = "flex";
         return;
     }
 
-    // Jika ada pencarian, tampilkan SEMUA hasil (tidak terpaginasi)
     tbody.innerHTML = "";
     let count = 0;
     allData.forEach((d, i) => {
@@ -481,7 +506,6 @@ function filterTable() {
         }
     });
     
-    // Sembunyikan pagination saat search
     document.getElementById("pagination-box").style.display = "none";
     if(count === 0) tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; color:var(--text-gray)'>Tidak ditemukan</td></tr>";
 }
@@ -489,7 +513,7 @@ function filterTable() {
 /* ===== BARCODE SCANNING ===== */
 function toggleScan(){
     if(isScanning) {
-        stopScan(true); // true = stop permanen
+        stopScan();
         return;
     }
     
@@ -497,7 +521,7 @@ function toggleScan(){
 }
 
 function startScanSequence() {
-    readerContainer.style.display = "block";
+    readerContainer.style.display = "flex"; // Tampilkan overlay full screen
     
     let line = document.getElementById("scan-line-overlay");
     if(!line) {
@@ -507,7 +531,7 @@ function startScanSequence() {
         document.getElementById("reader").appendChild(line);
     }
 
-    if(!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+    html5QrCode = new Html5Qrcode("reader");
     
     const config = { 
         fps: 60, 
@@ -527,7 +551,7 @@ function startScanSequence() {
         btn.innerText = "❌ Stop";
         btn.classList.add("active");
     }).catch(err => {
-        showToast("❌ Kamera gagal diakses");
+        showToast("❌ Kamera gagal");
         readerContainer.style.display = "none";
     });
 }
@@ -539,20 +563,18 @@ function onScanSuccess(decodedText) {
 
     document.getElementById("search").value = decodedText;
     
-    // Cari data di dalam array global
     const foundIndex = allData.findIndex(d => d.part.toLowerCase() === decodedText.toLowerCase());
     
     if(foundIndex !== -1){
         const d = foundIndex;
-        
-        // Logika Ganti Halaman Otomatis
         const targetPage = Math.ceil((d + 1) / rowsPerPage);
+        
+        // Jika halaman berbeda, pindah halaman
         if(targetPage !== currentPage) {
             currentPage = targetPage;
-            renderTable(); // Render halaman baru
+            renderTable();
         }
 
-        // Cari baris di DOM
         const rows = tbody.querySelectorAll("tr");
         let targetRow = null;
         rows.forEach(r => {
@@ -600,25 +622,19 @@ function startCooldown(seconds) {
     }, 1000);
 }
 
-function pauseScanTemporarily() {
-    // Tidak perlu aksi khusus, scanner akan otomatis refresh di halaman baru
-}
-
-function stopScan(isPermanent = false) {
+function stopScan() {
     if(html5QrCode && isScanning) {
         html5QrCode.stop().then(() => {
-            if(isPermanent) {
-                readerContainer.style.display = "none";
-                const line = document.getElementById("scan-line-overlay");
-                if(line) line.remove();
-                cooldownOverlay.style.display = "none";
-                isCooldown = false;
-                
-                const btn = document.getElementById("btnScan");
-                btn.innerText = "📷 Scan";
-                btn.classList.remove("active");
-                isScanning = false;
-            }
+            readerContainer.style.display = "none";
+            const line = document.getElementById("scan-line-overlay");
+            if(line) line.remove();
+            cooldownOverlay.style.display = "none";
+            isCooldown = false;
+            
+            const btn = document.getElementById("btnScan");
+            btn.innerText = "📷 Scan";
+            btn.classList.remove("active");
+            isScanning = false;
         }).catch(err => console.error(err));
     }
 }
@@ -638,9 +654,9 @@ function manualSave() {
 
 function loadStorage() {
     const data = JSON.parse(localStorage.getItem(storageKey) || "[]");
-    allData = data; // Load ke array global
+    allData = data;
     currentPage = 1;
-    renderTable(); // Render halaman pertama
+    renderTable();
 }
 
 function clearAll() {
