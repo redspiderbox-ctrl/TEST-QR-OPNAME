@@ -65,11 +65,6 @@
       50% { box-shadow: 0 0 0 10px rgba(250, 204, 21, 0); }
     }
 
-    @keyframes countdown {
-      from { stroke-dashoffset: 0; }
-      to { stroke-dashoffset: 283; }
-    }
-
     .animate-fade-up {
       animation: fadeSlideUp 0.5s ease-out forwards;
     }
@@ -123,6 +118,17 @@
     .btn-secondary:hover {
       background: var(--border);
       border-color: var(--muted);
+    }
+
+    .btn-icon {
+      padding: 8px;
+      background: var(--card);
+      color: var(--fg);
+      border: 1px solid var(--border);
+    }
+
+    .btn-icon:hover {
+      background: var(--border);
     }
 
     .btn-danger {
@@ -407,6 +413,34 @@
       animation: pulse-glow 0.5s ease-out;
     }
 
+    .volume-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      outline: none;
+    }
+
+    .volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      background: var(--accent);
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .volume-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      background: var(--accent);
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
@@ -565,11 +599,22 @@
     <div class="modal-content modal-lg">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-bold">Scan Barcode</h3>
-        <button onclick="closeScannerModal()" class="p-2 hover:bg-gray-800 rounded-lg transition-colors">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        </button>
+        <div class="flex items-center gap-2">
+          <!-- Volume Control -->
+          <div class="flex items-center gap-2 px-3 py-1 rounded-lg" style="background: var(--bg-secondary);">
+            <button onclick="toggleMute()" id="muteBtn" class="p-1 hover:text-yellow-400 transition-colors">
+              <svg id="volumeIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+              </svg>
+            </button>
+            <input type="range" id="volumeSlider" class="volume-slider w-16" min="0" max="100" value="70" oninput="updateVolume()">
+          </div>
+          <button onclick="closeScannerModal()" class="p-2 hover:bg-gray-800 rounded-lg transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <!-- Tab Buttons -->
@@ -716,11 +761,143 @@
     let cooldownActive = false;
     let cooldownInterval = null;
 
+    // Audio state
+    let audioContext = null;
+    let isMuted = false;
+    let volume = 0.7;
+
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
       setupFileUpload();
       setupManualInput();
+      initAudio();
     });
+
+    // Initialize Audio Context
+    function initAudio() {
+      try {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      } catch (e) {
+        console.warn('Web Audio API not supported');
+      }
+    }
+
+    // Resume Audio Context (required for some browsers)
+    function resumeAudio() {
+      if (audioContext && audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+    }
+
+    // Play Beep Sound
+    function playBeep(frequency = 880, duration = 150, type = 'sine') {
+      if (!audioContext || isMuted) return;
+      
+      resumeAudio();
+
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.frequency.value = frequency;
+      oscillator.type = type;
+
+      // Volume envelope for smooth sound
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.01);
+      gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + duration / 1000);
+      gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration / 1000 + 0.05);
+
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + duration / 1000 + 0.05);
+    }
+
+    // Play Success Beep (double beep)
+    function playSuccessBeep() {
+      if (!audioContext || isMuted) return;
+      
+      resumeAudio();
+      
+      // First beep - higher tone
+      playBeep(1200, 100, 'sine');
+      
+      // Second beep - slightly lower
+      setTimeout(() => {
+        playBeep(1000, 100, 'sine');
+      }, 120);
+    }
+
+    // Play Error Beep (low tone)
+    function playErrorBeep() {
+      if (!audioContext || isMuted) return;
+      
+      resumeAudio();
+      playBeep(300, 300, 'square');
+    }
+
+    // Toggle Mute
+    function toggleMute() {
+      isMuted = !isMuted;
+      updateVolumeIcon();
+      
+      // Save preference
+      localStorage.setItem('scannerMuted', isMuted);
+    }
+
+    // Update Volume
+    function updateVolume() {
+      const slider = document.getElementById('volumeSlider');
+      volume = slider.value / 100;
+      
+      if (volume === 0) {
+        isMuted = true;
+      } else {
+        isMuted = false;
+      }
+      
+      updateVolumeIcon();
+      
+      // Save preference
+      localStorage.setItem('scannerVolume', volume);
+    }
+
+    // Update Volume Icon
+    function updateVolumeIcon() {
+      const icon = document.getElementById('volumeIcon');
+      const slider = document.getElementById('volumeSlider');
+      
+      if (isMuted || volume === 0) {
+        icon.innerHTML = `
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" clip-rule="evenodd"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>
+        `;
+        slider.value = 0;
+      } else {
+        icon.innerHTML = `
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+        `;
+        slider.value = volume * 100;
+      }
+    }
+
+    // Load saved volume preferences
+    function loadVolumePreferences() {
+      const savedVolume = localStorage.getItem('scannerVolume');
+      const savedMuted = localStorage.getItem('scannerMuted');
+      
+      if (savedVolume !== null) {
+        volume = parseFloat(savedVolume);
+        document.getElementById('volumeSlider').value = volume * 100;
+      }
+      
+      if (savedMuted !== null) {
+        isMuted = savedMuted === 'true';
+      }
+      
+      updateVolumeIcon();
+    }
 
     // File Upload Setup
     function setupFileUpload() {
@@ -918,6 +1095,7 @@
     function openScannerModal() {
       document.getElementById('scannerModal').classList.add('active');
       document.getElementById('scanResult').classList.add('hidden');
+      loadVolumePreferences();
       switchTab('camera');
     }
 
@@ -980,12 +1158,18 @@
       );
 
       if (index === -1) {
+        // Play error beep
+        playErrorBeep();
+        
         document.getElementById('scanResult').classList.remove('hidden');
         document.getElementById('scanResultText').textContent = `Part "${partNumber}" tidak ditemukan`;
         document.getElementById('scanResultText').className = 'font-medium text-red-400';
         startCooldown();
         return;
       }
+
+      // Play success beep
+      playSuccessBeep();
 
       // Update qty fisik (+1)
       const currentQty = stockData[index].qtyFisik || 0;
@@ -1115,9 +1299,13 @@
       );
 
       if (index === -1) {
+        playErrorBeep();
         alert(`Part Number "${partNumber}" tidak ditemukan.`);
         return;
       }
+
+      // Play success beep
+      playSuccessBeep();
 
       stockData[index].qtyFisik = qty;
       filteredData = [...stockData];
