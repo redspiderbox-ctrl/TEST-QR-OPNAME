@@ -5,12 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Stock Opname Sparepart</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-  <!-- ZXing Browser Library for high sensitivity barcode scanning -->
-  <script src="https://unpkg.com/@aspect-ratio/core@latest"></script>
-  <script src="https://unpkg.com/@zxing/library@latest"></script>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -62,23 +60,20 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    @keyframes scan-line {
-      0% { top: 0; }
-      50% { top: calc(100% - 3px); }
-      100% { top: 0; }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.4); }
+      50% { box-shadow: 0 0 0 10px rgba(250, 204, 21, 0); }
     }
 
-    @keyframes pulse-ring {
-      0% { transform: scale(0.9); opacity: 1; }
-      100% { transform: scale(1.3); opacity: 0; }
+    @keyframes countdown {
+      from { stroke-dashoffset: 0; }
+      to { stroke-dashoffset: 283; }
     }
 
-    @keyframes success-flash {
-      0%, 100% { background: transparent; }
-      50% { background: rgba(34, 197, 94, 0.3); }
+    .animate-fade-up {
+      animation: fadeSlideUp 0.5s ease-out forwards;
     }
 
-    .animate-fade-up { animation: fadeSlideUp 0.5s ease-out forwards; }
     .animate-delay-1 { animation-delay: 0.1s; opacity: 0; }
     .animate-delay-2 { animation-delay: 0.2s; opacity: 0; }
     .animate-delay-3 { animation-delay: 0.3s; opacity: 0; }
@@ -97,19 +92,49 @@
       outline: none;
     }
 
-    .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
 
-    .btn-primary { background: var(--accent); color: var(--bg); }
-    .btn-primary:hover { background: #fbbf24; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(250, 204, 21, 0.3); }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg);
+    }
 
-    .btn-secondary { background: var(--card); color: var(--fg); border: 1px solid var(--border); }
-    .btn-secondary:hover { background: var(--border); border-color: var(--muted); }
-    .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary:hover {
+      background: #fbbf24;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(250, 204, 21, 0.3);
+    }
 
-    .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid var(--danger); }
-    .btn-danger:hover { background: var(--danger); color: white; }
-    .btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: var(--card);
+      color: var(--fg);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border);
+      border-color: var(--muted);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--danger);
+      border: 1px solid var(--danger);
+    }
+
+    .btn-danger:hover {
+      background: var(--danger);
+      color: white;
+    }
 
     .input {
       background: var(--bg-secondary);
@@ -122,10 +147,20 @@
       width: 100%;
     }
 
-    .input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+    .input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
     .input::placeholder { color: var(--muted); }
 
-    .table-container { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); background: var(--card); }
+    .table-container {
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--card);
+    }
 
     table { width: 100%; border-collapse: collapse; }
 
@@ -142,131 +177,25 @@
       white-space: nowrap;
     }
 
-    td { padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 14px; }
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
     tr:last-child td { border-bottom: none; }
     tr:hover { background: rgba(250, 204, 21, 0.03); }
     tr.highlight { background: var(--accent-dim); }
-    tr.success-flash { animation: success-flash 0.5s ease-out 2; }
 
     .selisih-positive { color: var(--success); font-weight: 600; }
     .selisih-negative { color: var(--danger); font-weight: 600; }
     .selisih-zero { color: var(--muted); }
 
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
-
-    .badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
-    .badge-success { background: rgba(34, 197, 94, 0.15); color: var(--success); }
-    .badge-danger { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
-    .badge-warning { background: rgba(249, 115, 22, 0.15); color: var(--warning); }
-
-    /* Scanner Camera Styles */
-    .scanner-video-container {
-      position: relative;
-      width: 100%;
-      max-width: 100%;
-      aspect-ratio: 4/3;
-      background: #000;
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
       border-radius: 12px;
-      overflow: hidden;
-      border: 2px solid var(--border);
-    }
-
-    .scanner-video-container.scanning { border-color: var(--accent); }
-    .scanner-video-container.success { border-color: var(--success); }
-
-    .scanner-video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .scanner-overlay {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-    }
-
-    .scan-line {
-      position: absolute;
-      left: 5%;
-      width: 90%;
-      height: 3px;
-      background: linear-gradient(90deg, transparent, var(--accent), transparent);
-      box-shadow: 0 0 15px var(--accent), 0 0 30px var(--accent);
-      animation: scan-line 2s ease-in-out infinite;
-    }
-
-    .scanner-corners {
-      position: absolute;
-      inset: 15%;
-    }
-
-    .scanner-corners::before,
-    .scanner-corners::after,
-    .scanner-corners-bottom::before,
-    .scanner-corners-bottom::after {
-      content: '';
-      position: absolute;
-      width: 40px;
-      height: 40px;
-      border: 4px solid var(--accent);
-    }
-
-    .scanner-corners::before { top: 0; left: 0; border-right: none; border-bottom: none; }
-    .scanner-corners::after { top: 0; right: 0; border-left: none; border-bottom: none; }
-    .scanner-corners-bottom::before { bottom: 0; left: 0; border-right: none; border-top: none; }
-    .scanner-corners-bottom::after { bottom: 0; right: 0; border-left: none; border-top: none; }
-
-    .cooldown-overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.7);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.3s ease;
-    }
-
-    .cooldown-overlay.active { opacity: 1; visibility: visible; }
-
-    .cooldown-timer {
-      font-size: 48px;
-      font-weight: 700;
-      font-family: 'IBM Plex Mono', monospace;
-      color: var(--accent);
-    }
-
-    .cooldown-text {
-      font-size: 14px;
-      color: var(--muted);
-      margin-top: 8px;
-    }
-
-    .scan-result-overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(34, 197, 94, 0.2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.3s ease;
-    }
-
-    .scan-result-overlay.active { opacity: 1; visibility: visible; }
-
-    .scan-result-icon {
-      width: 80px;
-      height: 80px;
-      background: var(--success);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      padding: 20px;
     }
 
     .drop-zone {
@@ -278,7 +207,11 @@
       cursor: pointer;
     }
 
-    .drop-zone:hover, .drop-zone.dragover { border-color: var(--accent); background: var(--accent-dim); }
+    .drop-zone:hover,
+    .drop-zone.dragover {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
 
     .modal-overlay {
       position: fixed;
@@ -294,22 +227,29 @@
       transition: all 0.3s ease;
     }
 
-    .modal-overlay.active { opacity: 1; visibility: visible; }
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
 
     .modal-content {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 24px;
-      max-width: 600px;
-      width: 95%;
-      max-height: 90vh;
-      overflow-y: auto;
+      max-width: 500px;
+      width: 90%;
       transform: scale(0.9);
       transition: transform 0.3s ease;
     }
 
-    .modal-overlay.active .modal-content { transform: scale(1); }
+    .modal-overlay.active .modal-content {
+      transform: scale(1);
+    }
+
+    .modal-content.modal-lg {
+      max-width: 600px;
+    }
 
     .stat-card {
       background: linear-gradient(135deg, var(--card) 0%, var(--bg-secondary) 100%);
@@ -320,15 +260,164 @@
       overflow: hidden;
     }
 
-    .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--accent); }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--accent);
+    }
+
+    /* QR Scanner Styles */
+    #qr-reader {
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    #qr-reader video {
+      border-radius: 12px;
+    }
+
+    #qr-reader__scan_region {
+      background: transparent !important;
+    }
+
+    #qr-reader__dashboard {
+      display: none !important;
+    }
+
+    .scanner-frame {
+      position: relative;
+      width: 100%;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .scanner-frame::before,
+    .scanner-frame::after {
+      content: '';
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--accent);
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .scanner-frame::before {
+      top: 10px;
+      left: 10px;
+      border-right: none;
+      border-bottom: none;
+    }
+
+    .scanner-frame::after {
+      top: 10px;
+      right: 10px;
+      border-left: none;
+      border-bottom: none;
+    }
+
+    .scanner-frame-bottom::before,
+    .scanner-frame-bottom::after {
+      content: '';
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--accent);
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .scanner-frame-bottom::before {
+      bottom: 10px;
+      left: 10px;
+      border-right: none;
+      border-top: none;
+    }
+
+    .scanner-frame-bottom::after {
+      bottom: 10px;
+      right: 10px;
+      border-left: none;
+      border-top: none;
+    }
+
+    .cooldown-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      z-index: 20;
+    }
+
+    .cooldown-timer {
+      position: relative;
+      width: 80px;
+      height: 80px;
+    }
+
+    .cooldown-timer svg {
+      transform: rotate(-90deg);
+    }
+
+    .cooldown-timer circle {
+      fill: none;
+      stroke-width: 4;
+    }
+
+    .cooldown-timer .bg {
+      stroke: var(--border);
+    }
+
+    .cooldown-timer .progress {
+      stroke: var(--accent);
+      stroke-linecap: round;
+      stroke-dasharray: 226;
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 0.1s linear;
+    }
+
+    .cooldown-number {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    .scan-success {
+      position: absolute;
+      inset: 0;
+      background: rgba(34, 197, 94, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      z-index: 15;
+      animation: pulse-glow 0.5s ease-out;
+    }
 
     @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
     }
 
     @media (max-width: 768px) {
       .hide-mobile { display: none; }
       th, td { padding: 10px 12px; font-size: 13px; }
+      .modal-content { padding: 16px; }
     }
   </style>
 </head>
@@ -465,7 +554,7 @@
         </svg>
         <div class="text-sm">
           <p class="text-yellow-400 font-medium mb-1">Format Excel yang Diterima</p>
-          <p class="text-gray-400">Kolom: <span class="font-mono text-gray-300">No, Part, Deskripsi, QTY</span>. Header harus di baris pertama. Gunakan fitur Scan Barcode untuk input QTY Fisik dengan kamera.</p>
+          <p class="text-gray-400">Kolom: <span class="font-mono text-gray-300">No, Part, Deskripsi, QTY</span>. Header harus di baris pertama. QTY Fisik dapat diisi manual atau melalui scan barcode.</p>
         </div>
       </div>
     </div>
@@ -473,7 +562,7 @@
 
   <!-- Scanner Modal -->
   <div class="modal-overlay" id="scannerModal">
-    <div class="modal-content">
+    <div class="modal-content modal-lg">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-bold">Scan Barcode</h3>
         <button onclick="closeScannerModal()" class="p-2 hover:bg-gray-800 rounded-lg transition-colors">
@@ -482,84 +571,90 @@
           </svg>
         </button>
       </div>
-      
-      <!-- Camera Scanner -->
-      <div class="mb-4">
-        <div class="flex items-center justify-between mb-2">
-          <label class="text-sm text-gray-400">Kamera Scanner</label>
-          <select id="cameraSelect" class="input py-1 px-2 text-xs w-auto" onchange="switchCamera()">
-            <option value="">Pilih Kamera</option>
-          </select>
-        </div>
-        
-        <div class="scanner-video-container" id="videoContainer">
-          <video id="scannerVideo" class="scanner-video" playsinline></video>
-          <div class="scanner-overlay">
-            <div class="scan-line" id="scanLine"></div>
-            <div class="scanner-corners"></div>
-            <div class="scanner-corners-bottom"></div>
+
+      <!-- Tab Buttons -->
+      <div class="flex gap-2 mb-4">
+        <button onclick="switchTab('camera')" id="tabCamera" class="btn btn-primary flex-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          Kamera
+        </button>
+        <button onclick="switchTab('manual')" id="tabManual" class="btn btn-secondary flex-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+          </svg>
+          Manual
+        </button>
+      </div>
+
+      <!-- Camera Tab -->
+      <div id="cameraTab" class="mb-4">
+        <div class="scanner-frame scanner-frame-bottom relative bg-gray-900 rounded-xl overflow-hidden">
+          <div id="qr-reader"></div>
+          
+          <!-- Success Overlay -->
+          <div id="scanSuccess" class="scan-success hidden">
+            <svg class="w-16 h-16 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+            </svg>
           </div>
-          <div class="cooldown-overlay" id="cooldownOverlay">
-            <div class="cooldown-timer" id="cooldownTimer">3</div>
-            <div class="cooldown-text">Tunggu sebelum scan berikutnya...</div>
-          </div>
-          <div class="scan-result-overlay" id="scanResultOverlay">
-            <div class="scan-result-icon">
-              <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+
+          <!-- Cooldown Overlay -->
+          <div id="cooldownOverlay" class="cooldown-overlay hidden">
+            <div class="cooldown-timer">
+              <svg width="80" height="80" viewBox="0 0 80 80">
+                <circle class="bg" cx="40" cy="40" r="36"/>
+                <circle class="progress" id="cooldownCircle" cx="40" cy="40" r="36"/>
               </svg>
+              <div class="cooldown-number" id="cooldownNumber">3</div>
             </div>
           </div>
         </div>
-        
-        <div class="flex gap-2 mt-3">
-          <button onclick="startCamera()" class="btn btn-primary flex-1" id="btnStartCamera">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-            </svg>
-            Mulai Kamera
-          </button>
-          <button onclick="stopCamera()" class="btn btn-secondary" id="btnStopCamera" disabled>
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
-            </svg>
-            Stop
-          </button>
+
+        <div class="mt-3 text-center">
+          <p class="text-sm text-gray-400">Arahkan kamera ke barcode</p>
+          <p class="text-xs text-gray-500 mt-1">Jeda 3 detik setelah berhasil scan</p>
         </div>
       </div>
 
-      <!-- Scanned Code Display -->
-      <div id="scannedCodeDisplay" class="hidden mb-4 p-3 rounded-lg border border-green-500 bg-green-500/10">
-        <p class="text-xs text-gray-400 mb-1">Barcode Terdeteksi:</p>
-        <p id="scannedCodeText" class="font-mono font-bold text-green-400 text-lg"></p>
-      </div>
+      <!-- Manual Tab -->
+      <div id="manualTab" class="hidden mb-4">
+        <div class="mb-4">
+          <label class="block text-sm text-gray-400 mb-2">Input Manual / Barcode Scanner</label>
+          <input type="text" id="barcodeInput" class="input font-mono" placeholder="Scan atau ketik Part Number...">
+          <p class="text-xs text-gray-500 mt-2">Arahkan barcode scanner ke input field di atas</p>
+        </div>
 
-      <!-- Manual Input -->
-      <div class="mb-4">
-        <label class="block text-sm text-gray-400 mb-2">Input Manual / Barcode Scanner</label>
-        <input type="text" id="barcodeInput" class="input font-mono" placeholder="Scan atau ketik Part Number...">
-      </div>
+        <div class="mb-4">
+          <label class="block text-sm text-gray-400 mb-2">QTY Fisik</label>
+          <input type="number" id="qtyInputManual" class="input font-mono" placeholder="0" min="0">
+        </div>
 
-      <div class="mb-4">
-        <label class="block text-sm text-gray-400 mb-2">QTY Fisik</label>
-        <input type="number" id="qtyInput" class="input font-mono" placeholder="0" min="0" value="1">
-      </div>
+        <div id="scanResultManual" class="hidden mb-4 p-3 rounded-lg bg-gray-800">
+          <p class="text-sm text-gray-400">Item ditemukan:</p>
+          <p id="scanResultTextManual" class="font-medium"></p>
+        </div>
 
-      <div id="scanResult" class="hidden mb-4 p-3 rounded-lg bg-gray-800">
-        <p class="text-sm text-gray-400">Item ditemukan:</p>
-        <p id="scanResultText" class="font-medium"></p>
-      </div>
-
-      <div class="flex gap-2">
-        <button onclick="processBarcode()" class="btn btn-primary flex-1">
+        <button onclick="processManualInput()" class="btn btn-primary w-full">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
           </svg>
           Update QTY
         </button>
-        <button onclick="closeScannerModal()" class="btn btn-secondary">Tutup</button>
       </div>
+
+      <!-- Scan Result (Camera) -->
+      <div id="scanResult" class="hidden p-3 rounded-lg bg-gray-800 mb-4">
+        <p class="text-sm text-gray-400">Item terdeteksi:</p>
+        <p id="scanResultText" class="font-medium text-green-400"></p>
+      </div>
+
+      <!-- Close Button -->
+      <button onclick="closeScannerModal()" class="btn btn-secondary w-full mt-2">
+        Tutup
+      </button>
     </div>
   </div>
 
@@ -614,10 +709,9 @@
     // Data storage
     let stockData = [];
     let filteredData = [];
-
-    // Scanner variables
-    let codeReader = null;
-    let selectedDeviceId = null;
+    
+    // Scanner state
+    let html5QrCode = null;
     let isScanning = false;
     let cooldownActive = false;
     let cooldownInterval = null;
@@ -625,233 +719,8 @@
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
       setupFileUpload();
-      setupBarcodeInput();
-      initZXing();
+      setupManualInput();
     });
-
-    // Initialize ZXing
-    function initZXing() {
-      codeReader = new ZXing.BrowserMultiFormatReader();
-      codeReader.listVideoInputDevices()
-        .then(videoInputDevices => {
-          const select = document.getElementById('cameraSelect');
-          select.innerHTML = '<option value="">Pilih Kamera</option>';
-          
-          videoInputDevices.forEach(device => {
-            const option = document.createElement('option');
-            option.value = device.deviceId;
-            option.text = device.label || `Camera ${device.deviceId.substr(0, 8)}...`;
-            select.appendChild(option);
-          });
-
-          if (videoInputDevices.length > 0) {
-            selectedDeviceId = videoInputDevices[0].deviceId;
-            select.value = selectedDeviceId;
-          }
-        })
-        .catch(err => {
-          console.error('Error listing cameras:', err);
-        });
-    }
-
-    // Start Camera
-    function startCamera() {
-      const select = document.getElementById('cameraSelect');
-      const deviceId = select.value || selectedDeviceId;
-
-      if (!deviceId) {
-        alert('Tidak ada kamera yang terdeteksi.');
-        return;
-      }
-
-      const videoElement = document.getElementById('scannerVideo');
-      const videoContainer = document.getElementById('videoContainer');
-      const btnStart = document.getElementById('btnStartCamera');
-      const btnStop = document.getElementById('btnStopCamera');
-
-      btnStart.disabled = true;
-      btnStart.innerHTML = `
-        <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        Memulai...
-      `;
-
-      codeReader.decodeFromVideoDevice(deviceId, videoElement, (result, err) => {
-        if (result && !cooldownActive) {
-          handleScanResult(result.text);
-        }
-        if (err && err.name !== 'NotFoundException') {
-          console.error('Scan error:', err);
-        }
-      })
-      .then(() => {
-        videoContainer.classList.add('scanning');
-        isScanning = true;
-        btnStart.disabled = true;
-        btnStop.disabled = false;
-        btnStart.innerHTML = `
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-          </svg>
-          Kamera Aktif
-        `;
-      })
-      .catch(err => {
-        console.error('Error starting camera:', err);
-        alert('Gagal mengakses kamera. Pastikan izin kamera diberikan.');
-        btnStart.disabled = false;
-        btnStop.disabled = true;
-        btnStart.innerHTML = `
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-          </svg>
-          Mulai Kamera
-        `;
-      });
-    }
-
-    // Stop Camera
-    function stopCamera() {
-      if (codeReader) {
-        codeReader.reset();
-      }
-
-      const videoContainer = document.getElementById('videoContainer');
-      const btnStart = document.getElementById('btnStartCamera');
-      const btnStop = document.getElementById('btnStopCamera');
-
-      videoContainer.classList.remove('scanning', 'success');
-      isScanning = false;
-      btnStart.disabled = false;
-      btnStop.disabled = true;
-      btnStart.innerHTML = `
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-        </svg>
-        Mulai Kamera
-      `;
-    }
-
-    // Switch Camera
-    function switchCamera() {
-      const select = document.getElementById('cameraSelect');
-      selectedDeviceId = select.value;
-      
-      if (isScanning) {
-        stopCamera();
-        setTimeout(() => startCamera(), 300);
-      }
-    }
-
-    // Handle Scan Result
-    function handleScanResult(barcode) {
-      if (cooldownActive) return;
-
-      console.log('Barcode detected:', barcode);
-
-      // Show scanned code
-      const scannedCodeDisplay = document.getElementById('scannedCodeDisplay');
-      const scannedCodeText = document.getElementById('scannedCodeText');
-      scannedCodeDisplay.classList.remove('hidden');
-      scannedCodeText.textContent = barcode;
-
-      // Set barcode input
-      document.getElementById('barcodeInput').value = barcode;
-
-      // Check if part exists
-      const found = stockData.find(item => 
-        item.part.toLowerCase() === barcode.toLowerCase()
-      );
-
-      if (found) {
-        // Show success overlay
-        const videoContainer = document.getElementById('videoContainer');
-        const resultOverlay = document.getElementById('scanResultOverlay');
-        
-        videoContainer.classList.add('success');
-        resultOverlay.classList.add('active');
-
-        // Update scan result
-        document.getElementById('scanResult').classList.remove('hidden');
-        document.getElementById('scanResultText').textContent = 
-          `${found.part} - ${found.deskripsi} (QTY: ${found.qty})`;
-
-        // Auto process with default qty
-        const qty = parseInt(document.getElementById('qtyInput').value) || 1;
-        const index = stockData.findIndex(item => item.part.toLowerCase() === barcode.toLowerCase());
-        
-        if (index !== -1) {
-          stockData[index].qtyFisik = (stockData[index].qtyFisik || 0) + qty;
-          updateTableAfterScan(index);
-        }
-
-        setTimeout(() => {
-          videoContainer.classList.remove('success');
-          resultOverlay.classList.remove('active');
-        }, 500);
-
-        // Start cooldown
-        startCooldown();
-      } else {
-        document.getElementById('scanResult').classList.add('hidden');
-        alert(`Part Number "${barcode}" tidak ditemukan dalam data.`);
-      }
-    }
-
-    // Start Cooldown
-    function startCooldown() {
-      cooldownActive = true;
-      
-      const cooldownOverlay = document.getElementById('cooldownOverlay');
-      const cooldownTimer = document.getElementById('cooldownTimer');
-      const scanLine = document.getElementById('scanLine');
-      
-      cooldownOverlay.classList.add('active');
-      scanLine.style.animationPlayState = 'paused';
-      
-      let countdown = 3;
-      cooldownTimer.textContent = countdown;
-
-      cooldownInterval = setInterval(() => {
-        countdown--;
-        cooldownTimer.textContent = countdown;
-
-        if (countdown <= 0) {
-          clearInterval(cooldownInterval);
-          cooldownActive = false;
-          cooldownOverlay.classList.remove('active');
-          scanLine.style.animationPlayState = 'running';
-        }
-      }, 1000);
-    }
-
-    // Update Table After Scan
-    function updateTableAfterScan(index) {
-      filteredData = [...stockData];
-      
-      const query = document.getElementById('searchInput').value.toLowerCase().trim();
-      if (query) {
-        filteredData = stockData.filter(item => 
-          item.no.toString().includes(query) ||
-          item.part.toLowerCase().includes(query) ||
-          item.deskripsi.toLowerCase().includes(query)
-        );
-      }
-
-      renderTable();
-      updateStats();
-
-      // Highlight row
-      setTimeout(() => {
-        const row = document.getElementById(`row-${index}`);
-        if (row) {
-          row.classList.add('success-flash');
-          setTimeout(() => row.classList.remove('success-flash'), 1000);
-        }
-      }, 100);
-    }
 
     // File Upload Setup
     function setupFileUpload() {
@@ -982,14 +851,12 @@
       }).join('');
     }
 
-    // Escape HTML
     function escapeHtml(text) {
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
     }
 
-    // Update Stats
     function updateStats() {
       const total = stockData.length;
       const counted = stockData.filter(item => item.qtyFisik !== null).length;
@@ -1002,14 +869,12 @@
       document.getElementById('stat-diff').textContent = diff;
     }
 
-    // Update Buttons
     function updateButtons(hasData) {
       document.getElementById('btnDownloadExcel').disabled = !hasData;
       document.getElementById('btnDownloadPDF').disabled = !hasData;
       document.getElementById('btnClear').disabled = !hasData;
     }
 
-    // Filter Data
     function filterData() {
       const query = document.getElementById('searchInput').value.toLowerCase().trim();
       
@@ -1026,26 +891,180 @@
       renderTable();
     }
 
-    // Scanner Modal
-    function openScannerModal() {
-      document.getElementById('scannerModal').classList.add('active');
-      document.getElementById('barcodeInput').value = '';
-      document.getElementById('qtyInput').value = '1';
-      document.getElementById('scanResult').classList.add('hidden');
-      document.getElementById('scannedCodeDisplay').classList.add('hidden');
-    }
+    // Tab Switching
+    function switchTab(tab) {
+      const cameraTab = document.getElementById('cameraTab');
+      const manualTab = document.getElementById('manualTab');
+      const tabCamera = document.getElementById('tabCamera');
+      const tabManual = document.getElementById('tabManual');
 
-    function closeScannerModal() {
-      stopCamera();
-      document.getElementById('scannerModal').classList.remove('active');
-      if (cooldownInterval) {
-        clearInterval(cooldownInterval);
-        cooldownActive = false;
+      if (tab === 'camera') {
+        cameraTab.classList.remove('hidden');
+        manualTab.classList.add('hidden');
+        tabCamera.className = 'btn btn-primary flex-1';
+        tabManual.className = 'btn btn-secondary flex-1';
+        startCamera();
+      } else {
+        cameraTab.classList.add('hidden');
+        manualTab.classList.remove('hidden');
+        tabCamera.className = 'btn btn-secondary flex-1';
+        tabManual.className = 'btn btn-primary flex-1';
+        stopCamera();
+        setTimeout(() => document.getElementById('barcodeInput').focus(), 100);
       }
     }
 
-    // Barcode Input Setup
-    function setupBarcodeInput() {
+    // Scanner Modal
+    function openScannerModal() {
+      document.getElementById('scannerModal').classList.add('active');
+      document.getElementById('scanResult').classList.add('hidden');
+      switchTab('camera');
+    }
+
+    function closeScannerModal() {
+      document.getElementById('scannerModal').classList.remove('active');
+      stopCamera();
+      clearCooldown();
+    }
+
+    // Camera Functions
+    async function startCamera() {
+      if (html5QrCode && isScanning) return;
+
+      try {
+        html5QrCode = new Html5Qrcode("qr-reader");
+        
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          {
+            fps: 10,
+            qrbox: function(viewfinderWidth, viewfinderHeight) {
+              let minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+              let qrboxSize = Math.floor(minEdge * 0.7);
+              return { width: qrboxSize, height: qrboxSize };
+            },
+            aspectRatio: 1.0
+          },
+          onScanSuccess,
+          onScanFailure
+        );
+        
+        isScanning = true;
+      } catch (err) {
+        console.error("Error starting camera:", err);
+        alert("Gagal mengakses kamera. Pastikan izin kamera diberikan.");
+        switchTab('manual');
+      }
+    }
+
+    async function stopCamera() {
+      if (html5QrCode && isScanning) {
+        try {
+          await html5QrCode.stop();
+          html5QrCode.clear();
+        } catch (err) {
+          console.error("Error stopping camera:", err);
+        }
+        isScanning = false;
+      }
+    }
+
+    function onScanSuccess(decodedText, decodedResult) {
+      if (cooldownActive) return;
+
+      const partNumber = decodedText.trim();
+      
+      // Find item
+      const index = stockData.findIndex(item => 
+        item.part.toLowerCase() === partNumber.toLowerCase()
+      );
+
+      if (index === -1) {
+        document.getElementById('scanResult').classList.remove('hidden');
+        document.getElementById('scanResultText').textContent = `Part "${partNumber}" tidak ditemukan`;
+        document.getElementById('scanResultText').className = 'font-medium text-red-400';
+        startCooldown();
+        return;
+      }
+
+      // Update qty fisik (+1)
+      const currentQty = stockData[index].qtyFisik || 0;
+      stockData[index].qtyFisik = currentQty + 1;
+
+      // Show success
+      showScanSuccess();
+      
+      document.getElementById('scanResult').classList.remove('hidden');
+      document.getElementById('scanResultText').textContent = 
+        `${stockData[index].part} - ${stockData[index].deskripsi} (QTY: ${stockData[index].qtyFisik})`;
+      document.getElementById('scanResultText').className = 'font-medium text-green-400';
+
+      // Update table
+      filteredData = [...stockData];
+      renderTable();
+      updateStats();
+
+      // Highlight row
+      const row = document.getElementById(`row-${index}`);
+      if (row) {
+        row.classList.add('highlight');
+        setTimeout(() => row.classList.remove('highlight'), 2000);
+      }
+
+      // Start cooldown
+      startCooldown();
+    }
+
+    function onScanFailure(error) {
+      // Silent failure - normal when no barcode in view
+    }
+
+    function showScanSuccess() {
+      const successEl = document.getElementById('scanSuccess');
+      successEl.classList.remove('hidden');
+      setTimeout(() => successEl.classList.add('hidden'), 500);
+    }
+
+    function startCooldown() {
+      cooldownActive = true;
+      const overlay = document.getElementById('cooldownOverlay');
+      const circle = document.getElementById('cooldownCircle');
+      const number = document.getElementById('cooldownNumber');
+      
+      overlay.classList.remove('hidden');
+      
+      let seconds = 3;
+      const totalSeconds = 3;
+      const circumference = 2 * Math.PI * 36; // radius = 36
+      
+      circle.style.strokeDasharray = circumference;
+      circle.style.strokeDashoffset = 0;
+      number.textContent = seconds;
+
+      cooldownInterval = setInterval(() => {
+        seconds--;
+        number.textContent = seconds;
+        
+        const offset = circumference * (1 - seconds / totalSeconds);
+        circle.style.strokeDashoffset = offset;
+
+        if (seconds <= 0) {
+          clearCooldown();
+        }
+      }, 1000);
+    }
+
+    function clearCooldown() {
+      cooldownActive = false;
+      if (cooldownInterval) {
+        clearInterval(cooldownInterval);
+        cooldownInterval = null;
+      }
+      document.getElementById('cooldownOverlay').classList.add('hidden');
+    }
+
+    // Manual Input
+    function setupManualInput() {
       const barcodeInput = document.getElementById('barcodeInput');
       
       barcodeInput.addEventListener('input', (e) => {
@@ -1058,29 +1077,28 @@
           );
           
           if (found) {
-            document.getElementById('scanResult').classList.remove('hidden');
-            document.getElementById('scanResultText').textContent = 
-              `${found.part} - ${found.deskripsi} (QTY: ${found.qty})`;
+            document.getElementById('scanResultManual').classList.remove('hidden');
+            document.getElementById('scanResultTextManual').textContent = 
+              `${found.part} - ${found.deskripsi} (QTY System: ${found.qty})`;
           } else {
-            document.getElementById('scanResult').classList.add('hidden');
+            document.getElementById('scanResultManual').classList.add('hidden');
           }
         } else {
-          document.getElementById('scanResult').classList.add('hidden');
+          document.getElementById('scanResultManual').classList.add('hidden');
         }
       });
 
       barcodeInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
-          processBarcode();
+          processManualInput();
         }
       });
     }
 
-    // Process Barcode (Manual)
-    function processBarcode() {
+    function processManualInput() {
       const partNumber = document.getElementById('barcodeInput').value.trim();
-      const qty = parseInt(document.getElementById('qtyInput').value);
+      const qty = parseInt(document.getElementById('qtyInputManual').value);
 
       if (!partNumber) {
         alert('Masukkan Part Number terlebih dahulu.');
@@ -1118,14 +1136,13 @@
 
       const row = document.getElementById(`row-${index}`);
       if (row) {
-        row.classList.add('success-flash');
-        setTimeout(() => row.classList.remove('success-flash'), 1000);
+        row.classList.add('highlight');
+        setTimeout(() => row.classList.remove('highlight'), 2000);
       }
 
       document.getElementById('barcodeInput').value = '';
-      document.getElementById('qtyInput').value = '1';
-      document.getElementById('scanResult').classList.add('hidden');
-      document.getElementById('scannedCodeDisplay').classList.add('hidden');
+      document.getElementById('qtyInputManual').value = '';
+      document.getElementById('scanResultManual').classList.add('hidden');
       document.getElementById('barcodeInput').focus();
     }
 
@@ -1279,8 +1296,11 @@
           if (data.column.index === 5 && data.cell.section === 'body') {
             const value = data.cell.raw;
             if (typeof value === 'string') {
-              if (value.startsWith('+')) data.cell.styles.textColor = [34, 197, 94];
-              else if (value.startsWith('-')) data.cell.styles.textColor = [239, 68, 68];
+              if (value.startsWith('+')) {
+                data.cell.styles.textColor = [34, 197, 94];
+              } else if (value.startsWith('-')) {
+                data.cell.styles.textColor = [239, 68, 68];
+              }
             }
           }
         }
@@ -1301,7 +1321,6 @@
       doc.save(`Stock_Opname_${new Date().toISOString().split('T')[0]}.pdf`);
     }
 
-    // Clear Data
     function clearData() {
       if (!confirm('Hapus semua data? Tindakan ini tidak dapat dibatalkan.')) return;
       
@@ -1314,7 +1333,7 @@
       updateButtons(false);
     }
 
-    // Close modals on Escape
+    // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         closeScannerModal();
@@ -1326,8 +1345,9 @@
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
       overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
-          if (overlay.id === 'scannerModal') closeScannerModal();
-          else closeEditModal();
+          overlay.classList.remove('active');
+          stopCamera();
+          clearCooldown();
         }
       });
     });
